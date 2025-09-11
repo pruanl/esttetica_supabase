@@ -150,7 +150,6 @@ function generateAppointments(patients: any[], procedures: any[], userId: string
     const randomPatient = patients[Math.floor(Math.random() * patients.length)]
     const randomProcedure = procedures[Math.floor(Math.random() * procedures.length)]
     
-    const statuses = ['scheduled', 'completed', 'cancelled']
     const weights = [0.7, 0.2, 0.1] // 70% agendado, 20% concluído, 10% cancelado
     
     let status = 'scheduled'
