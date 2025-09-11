@@ -113,6 +113,7 @@ export function AppointmentDialog({
           patient_id: appointment.patient_id,
           procedure_id: appointment.procedure_id,
           appointment_date: new Date(appointment.appointment_date),
+          status: appointment.status,
           notes: appointment.notes || '',
         })
       } else {
@@ -120,6 +121,7 @@ export function AppointmentDialog({
           patient_id: '',
           procedure_id: '',
           appointment_date: undefined,
+          status: 'scheduled',
           notes: '',
         })
       }
