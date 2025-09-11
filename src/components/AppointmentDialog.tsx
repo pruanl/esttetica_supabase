@@ -38,11 +38,12 @@ import { ProceduresService } from '../services/proceduresService'
 import type { Patient, Procedure, Appointment } from '../types/database'
 
 const appointmentSchema = z.object({
-  patient_id: z.string().min(1, 'Selecione um paciente'),
-  procedure_id: z.string().min(1, 'Selecione um procedimento'),
+  patient_id: z.string().min(1, 'Paciente é obrigatório'),
+  procedure_id: z.string().min(1, 'Procedimento é obrigatório'),
   appointment_date: z.date({
-    message: 'Selecione uma data e hora',
+    message: 'Data do agendamento é obrigatória',
   }),
+  status: z.enum(['scheduled', 'confirmed', 'completed', 'cancelled']),
   notes: z.string().optional(),
 })
 
@@ -72,7 +73,8 @@ export function AppointmentDialog({
     defaultValues: {
       patient_id: appointment?.patient_id || '',
       procedure_id: appointment?.procedure_id || '',
-      appointment_date: appointment ? new Date(appointment.appointment_date) : undefined,
+      appointment_date: appointment?.appointment_date ? new Date(appointment.appointment_date) : new Date(),
+      status: appointment?.status || 'scheduled',
       notes: appointment?.notes || '',
     },
   })
@@ -156,7 +158,7 @@ export function AppointmentDialog({
         duration_minutes: selectedProcedure.duration_minutes,
         total_price: selectedProcedure.price,
         notes: data.notes,
-        status: 'scheduled' as const,
+        status: data.status,
         is_active: true,
       }
 
@@ -273,6 +275,30 @@ export function AppointmentDialog({
                 </FormControl>
               </FormItem>
             </div>
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="scheduled">Agendado</SelectItem>
+                      <SelectItem value="confirmed">Confirmado</SelectItem>
+                      <SelectItem value="completed">Concluído</SelectItem>
+                      <SelectItem value="cancelled">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

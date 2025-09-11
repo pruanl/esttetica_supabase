@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardCalendar } from '@/components/DashboardCalendar'
+import { SeedDataButton } from '@/components/SeedDataButton'
 import { Scissors, Users, Calendar } from 'lucide-react'
 
 export const Dashboard: React.FC = () => {
@@ -95,7 +96,8 @@ export const Dashboard: React.FC = () => {
             </Link>
           </div>
 
-          <div className="mt-8">
+          <div className="mt-8 space-y-6">
+            <SeedDataButton />
             <DashboardCalendar />
           </div>
         </div>
