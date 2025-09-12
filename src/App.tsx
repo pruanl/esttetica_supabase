@@ -8,6 +8,7 @@ import { Dashboard } from '@/pages/Dashboard'
 import { Procedures } from '@/pages/Procedures'
 import { Patients } from '@/pages/Patients'
 import { Appointments } from '@/pages/Appointments'
+import { Settings } from '@/pages/Settings'
 import { Layout } from '@/components/Layout'
 
 const AppRoutes: React.FC = () => {
@@ -67,6 +68,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <Appointments />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Settings />
             </Layout>
           </ProtectedRoute>
         }

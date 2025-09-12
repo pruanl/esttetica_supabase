@@ -79,20 +79,27 @@ export function DashboardCalendar() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
-      <h2 className="text-xl font-semibold mb-4">Calendário de Agendamentos</h2>
-      <div className="calendar-container">
+    <div className="bg-white rounded-lg shadow-sm border p-3 md:p-6">
+      <h2 className="text-lg md:text-xl font-semibold mb-4">Calendário de Agendamentos</h2>
+      <div className="calendar-container overflow-x-auto">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{
-            left: 'prev,next today',
+            left: 'prev,next',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            right: 'today'
+          }}
+          footerToolbar={{
+            left: '',
+            center: '',
+            right: 'dayGridMonth,timeGridWeek'
           }}
           events={events}
           eventClick={handleEventClick}
           height="auto"
+          contentHeight="auto"
+          aspectRatio={1.2}
           locale="pt-br"
           buttonText={{
             today: 'Hoje',
@@ -130,21 +137,21 @@ export function DashboardCalendar() {
       </div>
       
       {/* Legenda de cores */}
-      <div className="mt-4 flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded"></div>
+      <div className="mt-4 grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-4 text-xs md:text-sm">
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="w-2 h-2 md:w-3 md:h-3 bg-blue-500 rounded"></div>
           <span>Agendado</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded"></div>
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="w-2 h-2 md:w-3 md:h-3 bg-green-500 rounded"></div>
           <span>Confirmado</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-500 rounded"></div>
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="w-2 h-2 md:w-3 md:h-3 bg-gray-500 rounded"></div>
           <span>Concluído</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-500 rounded"></div>
+        <div className="flex items-center gap-1 md:gap-2">
+          <div className="w-2 h-2 md:w-3 md:h-3 bg-red-500 rounded"></div>
           <span>Cancelado</span>
         </div>
       </div>

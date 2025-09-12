@@ -1,5 +1,6 @@
 import React from 'react'
 import { AppSidebar } from './AppSidebar'
+import { BottomNav } from './BottomNav'
 import { SidebarProvider, SidebarTrigger } from './ui/sidebar'
 import {
   Breadcrumb,
@@ -34,7 +35,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="flex flex-1 flex-col">
+      <main className="flex flex-1 flex-col pb-16 md:pb-0">
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
@@ -58,6 +59,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {children}
         </div>
       </main>
+      <BottomNav />
     </SidebarProvider>
   )
 }
