@@ -113,7 +113,26 @@ export function PatientForm({ patient, onSave, onCancel }: PatientFormProps) {
     }
   };
 
+  const formatPhone = (value: string) => {
+    // Remove todos os caracteres não numéricos
+    const numbers = value.replace(/\D/g, '');
+    
+    // Aplica a máscara (11) 99999-9999
+    if (numbers.length <= 2) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    } else if (numbers.length <= 11) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+    } else {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
   const handleChange = (field: string, value: string) => {
+    if (field === 'phone') {
+      value = formatPhone(value);
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
     if (error) setError(null);
   };
@@ -226,11 +245,11 @@ export function PatientForm({ patient, onSave, onCancel }: PatientFormProps) {
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar'}
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
               Cancelar
+            </Button>
+            <Button type="submit" disabled={loading} className="flex-1">
+              {loading ? 'Salvando...' : 'Criar'}
             </Button>
           </div>
         </form>

@@ -7,14 +7,16 @@ import { PatientForm } from '../components/PatientForm';
 import { patientsService } from '../services/patientsService';
 import type { Patient } from '../types/database';
 import { Users, Plus, Search, Edit, Trash2, Phone, Mail, Calendar } from 'lucide-react';
+import { useIsMobile } from '../hooks/use-mobile';
 
 export function Patients() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<Patient | undefined>();
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const isMobile = useIsMobile();
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function Patients() {
   const handleSave = async () => {
     await loadPatients();
     setShowForm(false);
-    setEditingPatient(undefined);
+    setEditingPatient(null);
   };
 
   const handleEdit = (patient: Patient) => {
@@ -71,7 +73,7 @@ export function Patients() {
 
   const handleCancel = () => {
     setShowForm(false);
-    setEditingPatient(undefined);
+    setEditingPatient(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -95,7 +97,7 @@ export function Patients() {
     return (
       <div className="container mx-auto p-6">
         <PatientForm
-          patient={editingPatient}
+          patient={editingPatient || undefined}
           onSave={handleSave}
           onCancel={handleCancel}
         />
@@ -112,7 +114,7 @@ export function Patients() {
         </div>
         <Button onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Novo Paciente
+          {isMobile ? 'Novo' : 'Novo Paciente'}
         </Button>
       </div>
 
@@ -148,7 +150,7 @@ export function Patients() {
           {!searchTerm && (
             <Button onClick={() => setShowForm(true)} className="mt-4">
               <Plus className="h-4 w-4 mr-2" />
-              Cadastrar Primeiro Paciente
+              {isMobile ? 'Novo' : 'Cadastrar Primeiro Paciente'}
             </Button>
           )}
         </div>

@@ -8,6 +8,7 @@ import { appointmentsService } from '@/services/appointmentsService'
 import type { AppointmentWithDetails } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
 import { Pencil, Trash2, Plus, Search, Calendar, Clock, User, FileText } from 'lucide-react'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 export const Appointments: React.FC = () => {
   const { user } = useAuth()
@@ -19,6 +20,7 @@ export const Appointments: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     loadAppointments()
@@ -122,7 +124,7 @@ export const Appointments: React.FC = () => {
         <h1 className="text-3xl font-bold">Agendamentos</h1>
         <Button onClick={() => setShowDialog(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Novo Agendamento
+          {isMobile ? 'Novo' : 'Novo Agendamento'}
         </Button>
       </div>
 
@@ -264,12 +266,13 @@ export const Appointments: React.FC = () => {
         </div>
       )}
       
-      <AppointmentDialog
-        open={showDialog}
-        onOpenChange={setShowDialog}
-        appointment={editingAppointment}
-        onSave={handleSave}
-      />
+      {showDialog && (
+        <AppointmentDialog
+          appointment={editingAppointment}
+          onClose={() => setShowDialog(false)}
+          onSave={handleSave}
+        />
+      )}
     </div>
   )
 }

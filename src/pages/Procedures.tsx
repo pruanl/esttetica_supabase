@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge'
 import { ProceduresService } from '../services/proceduresService'
 import type { Procedure } from '../types/database'
 import { ProcedureForm } from '../components/ProcedureForm'
+import { useIsMobile } from '../hooks/use-mobile'
 
 export function Procedures() {
   const [procedures, setProcedures] = useState<Procedure[]>([])
@@ -17,6 +18,7 @@ export function Procedures() {
   const [categories, setCategories] = useState<string[]>([])
   const [showForm, setShowForm] = useState(false)
   const [editingProcedure, setEditingProcedure] = useState<Procedure | null>(null)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     loadProcedures()
@@ -112,7 +114,7 @@ export function Procedures() {
         </div>
         <Button onClick={() => setShowForm(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Novo Procedimento
+          {isMobile ? 'Novo' : 'Novo Procedimento'}
         </Button>
       </div>
 

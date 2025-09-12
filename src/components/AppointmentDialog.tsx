@@ -4,14 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { format, addMinutes } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog'
+import { X } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import {
   Form,
   FormControl,
@@ -50,16 +44,14 @@ const appointmentSchema = z.object({
 type AppointmentFormData = z.infer<typeof appointmentSchema>
 
 interface AppointmentDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
   appointment?: Appointment | null
+  onClose: () => void
   onSave?: () => void
 }
 
 export function AppointmentDialog({
-  open,
-  onOpenChange,
   appointment,
+  onClose,
   onSave,
 }: AppointmentDialogProps) {
   const { user } = useAuth()
@@ -83,10 +75,10 @@ export function AppointmentDialog({
 
   // Carregar pacientes e procedimentos
   useEffect(() => {
-    if (open && user) {
+    if (user) {
       loadData()
     }
-  }, [open, user])
+  }, [user])
 
   // Calcular end_time automaticamente
   useEffect(() => {
@@ -107,27 +99,25 @@ export function AppointmentDialog({
 
   // Reset form when dialog opens/closes
   useEffect(() => {
-    if (open) {
-      if (appointment) {
-        form.reset({
-          patient_id: appointment.patient_id,
-          procedure_id: appointment.procedure_id,
-          appointment_date: new Date(appointment.appointment_date),
-          status: appointment.status,
-          notes: appointment.notes || '',
-        })
-      } else {
-        form.reset({
-          patient_id: '',
-          procedure_id: '',
-          appointment_date: undefined,
-          status: 'scheduled',
-          notes: '',
-        })
-      }
-      setEndTime(null)
+    if (appointment) {
+      form.reset({
+        patient_id: appointment.patient_id,
+        procedure_id: appointment.procedure_id,
+        appointment_date: new Date(appointment.appointment_date),
+        status: appointment.status,
+        notes: appointment.notes || '',
+      })
+    } else {
+      form.reset({
+        patient_id: '',
+        procedure_id: '',
+        appointment_date: undefined,
+        status: 'scheduled',
+        notes: '',
+      })
     }
-  }, [open, appointment, form])
+    setEndTime(null)
+  }, [appointment, form])
 
   const loadData = async () => {
     if (!user) return
@@ -170,7 +160,7 @@ export function AppointmentDialog({
         await appointmentsService.create(appointmentData)
       }
 
-      onOpenChange(false)
+      onClose()
         onSave?.()
     } catch (error) {
       console.error('Erro ao salvar agendamento:', error)
@@ -180,18 +170,26 @@ export function AppointmentDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>
-            {appointment ? 'Editar Agendamento' : 'Novo Agendamento'}
-          </DialogTitle>
-          <DialogDescription>
-            {appointment
-              ? 'Edite as informações do agendamento.'
-              : 'Preencha os dados para criar um novo agendamento.'}
-          </DialogDescription>
-        </DialogHeader>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>
+                {appointment ? 'Editar Agendamento' : 'Novo Agendamento'}
+              </CardTitle>
+              <CardDescription>
+                {appointment
+                  ? 'Edite as informações do agendamento.'
+                  : 'Preencha os dados para criar um novo agendamento.'}
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -319,21 +317,23 @@ export function AppointmentDialog({
               )}
             />
 
-            <DialogFooter>
+            <div className="flex gap-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={onClose}
+                className="flex-1"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Salvando...' : appointment ? 'Atualizar' : 'Criar Agendamento'}
+              <Button type="submit" disabled={isLoading} className="flex-1">
+                {isLoading ? 'Salvando...' : appointment ? 'Atualizar' : 'Criar'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
+  </div>
   )
 }
