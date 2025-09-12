@@ -1,37 +1,63 @@
-import React, { useState } from 'react'
-import { Sidebar } from './Sidebar'
-import { Button } from './ui/button'
-import { Menu } from 'lucide-react'
+import React from 'react'
+import { AppSidebar } from './AppSidebar'
+import { SidebarProvider, SidebarTrigger } from './ui/sidebar'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from './ui/breadcrumb'
+import { Separator } from './ui/separator'
+import { useLocation } from 'react-router-dom'
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
+const getBreadcrumbItems = (pathname: string) => {
+  const pathMap: Record<string, string> = {
+    '/dashboard': 'Dashboard',
+    '/patients': 'Pacientes',
+    '/procedures': 'Procedimentos',
+    '/appointments': 'Agendamentos',
+  }
+  
+  return pathMap[pathname] || 'Página'
+}
+
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const location = useLocation()
+  const currentPage = getBreadcrumbItems(location.pathname)
 
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
-      <div className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 md:hidden lg:h-[60px] lg:px-6">
-          <Button
-            variant="outline"
-            size="icon"
-            className="shrink-0"
-            onClick={() => setIsMobileMenuOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Abrir menu</span>
-          </Button>
-          <div className="flex items-center gap-2 font-semibold">
-            <span className="text-lg">Estética</span>
+    <SidebarProvider>
+      <AppSidebar />
+      <main className="flex flex-1 flex-col">
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/dashboard">
+                    Estética
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>{currentPage}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
-        </main>
-      </div>
-    </div>
+        </div>
+      </main>
+    </SidebarProvider>
   )
 }
