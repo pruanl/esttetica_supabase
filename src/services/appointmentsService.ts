@@ -139,5 +139,27 @@ export const appointmentsService = {
     }
 
     return data || []
+  },
+
+  // Buscar agendamentos por paciente
+  async getByPatientId(patientId: string, userId: string): Promise<AppointmentWithDetails[]> {
+    const { data, error } = await supabase
+      .from('appointments')
+      .select(`
+        *,
+        patient:patients(*),
+        procedure:procedures(*)
+      `)
+      .eq('patient_id', patientId)
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('appointment_date', { ascending: false })
+
+    if (error) {
+      console.error('Erro ao buscar agendamentos por paciente:', error)
+      throw error
+    }
+
+    return data || []
   }
 }

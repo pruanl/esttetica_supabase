@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -6,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { PatientForm } from '../components/PatientForm';
 import { patientsService } from '../services/patientsService';
 import type { Patient } from '../types/database';
-import { Users, Plus, Search, Edit, Trash2, Phone, Mail, Calendar } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Phone, Mail, Calendar, Eye } from 'lucide-react';
 import { useIsMobile } from '../hooks/use-mobile';
 
 export function Patients() {
@@ -161,7 +162,9 @@ export function Patients() {
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{patient.name}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {patient.name}
+                    </CardTitle>
                     {patient.birth_date && (
                       <p className="text-sm text-gray-500 mt-1">
                         <Calendar className="h-3 w-3 inline mr-1" />
@@ -170,10 +173,20 @@ export function Patients() {
                     )}
                   </div>
                   <div className="flex gap-1">
+                    <Link to={`/patients/${patient.id}`}>
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         title="Ver detalhes"
+                       >
+                         <Eye className="h-4 w-4" />
+                       </Button>
+                     </Link>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleEdit(patient)}
+                      title="Editar"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -182,6 +195,7 @@ export function Patients() {
                       size="sm"
                       onClick={() => handleDelete(patient)}
                       className="text-red-600 hover:text-red-700"
+                      title="Excluir"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

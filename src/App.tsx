@@ -7,6 +7,7 @@ import { SignUp } from '@/pages/SignUp'
 import { Dashboard } from '@/pages/Dashboard'
 import { Procedures } from '@/pages/Procedures'
 import { Patients } from '@/pages/Patients'
+import { PatientDetailPage } from '@/pages/PatientDetailPage'
 import { Appointments } from '@/pages/Appointments'
 import { Settings } from '@/pages/Settings'
 import { Layout } from '@/components/Layout'
@@ -58,6 +59,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <Patients />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/patients/:id"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <PatientDetailPage />
             </Layout>
           </ProtectedRoute>
         }

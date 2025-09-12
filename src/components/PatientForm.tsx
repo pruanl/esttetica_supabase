@@ -249,7 +249,7 @@ export function PatientForm({ patient, onSave, onCancel }: PatientFormProps) {
               Cancelar
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
-              {loading ? 'Salvando...' : 'Criar'}
+              {loading ? 'Salvando...' : (patient ? 'Salvar' : 'Criar')}
             </Button>
           </div>
         </form>

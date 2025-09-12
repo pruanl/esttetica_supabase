@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardCalendar } from '@/components/DashboardCalendar'
 import { SeedDataButton } from '@/components/SeedDataButton'
+import BirthdayWidget from '@/components/BirthdayWidget'
 import { Scissors, Users, Calendar } from 'lucide-react'
 
 export const Dashboard: React.FC = () => {
@@ -68,10 +69,15 @@ export const Dashboard: React.FC = () => {
         </Link>
       </div>
 
-      {/* Seção de Ferramentas e Calendário */}
-      <div className="space-y-6">
-        <SeedDataButton />
-        <DashboardCalendar />
+      {/* Seção de Widgets e Ferramentas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <BirthdayWidget />
+          <SeedDataButton />
+        </div>
+        <div>
+          <DashboardCalendar />
+        </div>
       </div>
     </div>
   )
