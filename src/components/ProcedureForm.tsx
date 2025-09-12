@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
-import { ProceduresService } from '../services/proceduresService'
-import type { Procedure, ProcedureInsert, ProcedureUpdate } from '../types/database'
+import { X, Calculator } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { ProceduresService } from '@/services/proceduresService'
+import { businessSettingsService } from '@/services/businessSettingsService'
+import { expensesService } from '@/services/expensesService'
+import type { Procedure, ProcedureInsert, ProcedureUpdate, BusinessSettings, FixedExpense } from '@/types/database'
 
 interface ProcedureFormProps {
   procedure?: Procedure | null
@@ -18,10 +22,14 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
     description: '',
     duration_minutes: 60,
     price: 0,
-    category: ''
+    cost: 0,
+    material_cost: 0
   })
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [costPerHour, setCostPerHour] = useState<number>(0)
+  const [profitMargin, setProfitMargin] = useState<number>(0.3)
+  const [calculatorLoading, setCalculatorLoading] = useState(false)
 
   useEffect(() => {
     if (procedure) {
@@ -30,10 +38,38 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
         description: procedure.description || '',
         duration_minutes: procedure.duration_minutes,
         price: procedure.price,
-        category: procedure.category || ''
+        cost: procedure.cost,
+        material_cost: procedure.cost // Usar o campo cost existente como material_cost
       })
     }
+    loadCalculatorData()
   }, [procedure])
+
+  const loadCalculatorData = async () => {
+    try {
+      setCalculatorLoading(true)
+      
+      // Buscar configurações financeiras
+      const settings = await businessSettingsService.getSettings()
+      if (settings) {
+        setProfitMargin(settings.desired_profit_margin)
+        
+        // Buscar despesas fixas
+        const expenses = await expensesService.getAll()
+        
+        // Calcular custo por hora
+        const totalMonthlyHours = settings.work_hours_per_day * settings.work_days_per_week * 4.33
+        const totalMonthlyExpenses = expenses.reduce((sum: number, expense: FixedExpense) => sum + expense.amount, 0)
+        const calculatedCostPerHour = totalMonthlyHours > 0 ? totalMonthlyExpenses / totalMonthlyHours : 0
+        
+        setCostPerHour(calculatedCostPerHour)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados da calculadora:', error)
+    } finally {
+      setCalculatorLoading(false)
+    }
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -70,17 +106,17 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
           description: formData.description || undefined,
           duration_minutes: formData.duration_minutes,
           price: formData.price,
-          category: formData.category || undefined
+          cost: formData.material_cost
         }
         await ProceduresService.update(procedure.id, updateData)
       } else {
         // Criar novo procedimento
-        const insertData: Omit<ProcedureInsert, 'user_id'> = {
+        const insertData: ProcedureInsert = {
           name: formData.name,
           description: formData.description || undefined,
           duration_minutes: formData.duration_minutes,
           price: formData.price,
-          category: formData.category || undefined
+          cost: formData.material_cost
         }
         await ProceduresService.create(insertData)
       }
@@ -137,22 +173,24 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
 
             <div>
               <Label htmlFor="description">Descrição</Label>
-              <textarea
+              <Input
                 id="description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Descreva o procedimento..."
-                className="w-full px-3 py-2 border rounded-md resize-none h-20"
               />
             </div>
 
             <div>
-              <Label htmlFor="category">Categoria</Label>
+              <Label htmlFor="material_cost">Custo de Material (R$)</Label>
               <Input
-                id="category"
-                value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                placeholder="Ex: Facial, Corporal"
+                id="material_cost"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.material_cost}
+                onChange={(e) => handleInputChange('material_cost', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
               />
             </div>
 
@@ -188,6 +226,62 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
                 )}
               </div>
             </div>
+
+            {/* Calculadora de Preço Sugerido */}
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="calculator">
+                <AccordionTrigger className="text-sm">
+                  <div className="flex items-center gap-2">
+                    <Calculator className="h-4 w-4" />
+                    Calculadora de Preço Sugerido
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  {calculatorLoading ? (
+                    <div className="text-sm text-muted-foreground">Carregando dados...</div>
+                  ) : costPerHour > 0 ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Custo do Tempo de Trabalho:</span>
+                          <span className="font-medium">
+                            R$ {((costPerHour / 60) * formData.duration_minutes).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Custo Total do Serviço:</span>
+                          <span className="font-medium">
+                            R$ {(((costPerHour / 60) * formData.duration_minutes) + formData.material_cost).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span className="text-muted-foreground">Preço de Venda Sugerido:</span>
+                          <span className="font-bold text-primary">
+                            R$ {(((costPerHour / 60) * formData.duration_minutes + formData.material_cost) * (1 + profitMargin)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          const suggestedPrice = ((costPerHour / 60) * formData.duration_minutes + formData.material_cost) * (1 + profitMargin)
+                          handleInputChange('price', parseFloat(suggestedPrice.toFixed(2)))
+                        }}
+                      >
+                        Usar Preço Sugerido
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Configure suas horas de trabalho e despesas fixas para usar a calculadora.
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             <div className="flex gap-2 pt-4">
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">

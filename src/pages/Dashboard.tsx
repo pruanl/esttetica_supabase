@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DashboardCalendar } from '@/components/DashboardCalendar'
 import { SeedDataButton } from '@/components/SeedDataButton'
 import BirthdayWidget from '@/components/BirthdayWidget'
+import UpcomingAppointmentsWidget from '@/components/UpcomingAppointmentsWidget'
+import { CostPerHourWidget } from '@/components/CostPerHourWidget'
 import { Scissors, Users, Calendar } from 'lucide-react'
 
 export const Dashboard: React.FC = () => {
@@ -72,6 +74,8 @@ export const Dashboard: React.FC = () => {
       {/* Seção de Widgets e Ferramentas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
+          <CostPerHourWidget />
+          <UpcomingAppointmentsWidget />
           <BirthdayWidget />
           <SeedDataButton />
         </div>

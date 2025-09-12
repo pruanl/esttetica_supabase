@@ -23,6 +23,7 @@ const getBreadcrumbItems = (pathname: string) => {
     '/patients': 'Pacientes',
     '/procedures': 'Procedimentos',
     '/appointments': 'Agendamentos',
+    '/tools/price-simulator': 'Simulador de Preços',
   }
   
   return pathMap[pathname] || 'Página'

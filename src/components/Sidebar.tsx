@@ -11,7 +11,9 @@ import {
   LogOut, 
   User,
   ChevronRight,
-  X
+  X,
+  DollarSign,
+  Settings
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -36,14 +38,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       icon: Users
     },
     {
+      name: 'Agendamentos',
+      href: '/appointments',
+      icon: Calendar
+    },
+    {
       name: 'Procedimentos',
       href: '/procedures',
       icon: FileText
     },
     {
-      name: 'Agendamentos',
-      href: '/appointments',
-      icon: Calendar
+      name: 'Despesas Fixas',
+      href: '/expenses',
+      icon: DollarSign
+    },
+    {
+      name: 'Configurações',
+      href: '/settings',
+      icon: Settings
     }
   ]
 

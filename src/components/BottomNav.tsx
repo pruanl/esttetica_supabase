@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Calendar, Users, MoreHorizontal, Settings, LogOut, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, MoreHorizontal, Settings, LogOut, ClipboardList, DollarSign, Calculator } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,8 @@ const navItems = [
 
 const secondaryMenuItems = [
   { href: "/procedures", label: "Procedimentos", icon: ClipboardList },
+  { href: "/expenses", label: "Despesas Fixas", icon: DollarSign },
+  { href: "/tools/price-simulator", label: "Calculadora Rápida", icon: Calculator },
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 

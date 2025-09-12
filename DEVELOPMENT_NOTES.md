@@ -126,7 +126,121 @@ src/
 
 ---
 
+## Módulo 3 - Calculadora de Preços e Simulador ✅
+
+### Funcionalidades Implementadas
+
+#### 1. Calculadora de Preço Sugerido no ProcedureForm
+- **Accordion "Calculadora de Preço Sugerido"** integrado ao formulário de procedimentos
+- **Campo de Custo de Material**: Input para inserir custos de materiais necessários
+- **Cálculos Automáticos em Tempo Real**:
+  - Custo do Tempo de Trabalho: baseado no custo/hora da profissional
+  - Custo Total: tempo + materiais
+  - Preço Sugerido: custo total + margem de lucro configurada
+- **Botão "Preencher Preço Automaticamente"**: aplica o preço calculado ao campo principal
+- **Integração com Dados Financeiros**: busca automática de configurações de custo/hora e margem
+
+#### 2. Simulador de Preços Autônomo
+- **Página Independente**: `/tools/price-simulator` (PriceSimulatorPage.tsx)
+- **Layout Responsivo**: duas colunas (inputs à esquerda, resultados à direita)
+- **Inputs Dinâmicos**:
+  - Campo de tempo estimado (minutos)
+  - Seção de materiais com botão "Adicionar Material"
+  - Linhas dinâmicas com nome e custo de produtos
+  - Campo editável de margem de lucro
+- **Cálculos em Tempo Real com useMemo**:
+  - Custo do Tempo: (custo/hora ÷ 60) × minutos
+  - Custo de Materiais: soma de todos os materiais
+  - Preço Mínimo: tempo + materiais
+  - Valor do Lucro: preço mínimo × margem
+  - Preço de Venda Sugerido: preço mínimo + lucro
+
+#### 3. Integração de Navegação
+- **Rota Protegida**: `/tools/price-simulator` configurada no App.tsx
+- **Menu Mobile**: link "Calculadora Rápida" no Sheet do BottomNav
+- **Menu Desktop**: item "Calculadora Rápida" na AppSidebar
+- **Breadcrumb**: "Simulador de Preços" no Layout
+- **Ícones Diferenciados**: Calculator para simulador, TrendingUp para config. financeiras
+
+### Arquivos Criados/Modificados
+
+#### Novos Arquivos
+- **src/pages/tools/PriceSimulatorPage.tsx**: Página completa do simulador
+
+#### Arquivos Modificados
+- **src/components/ProcedureForm.tsx**: Adicionada calculadora integrada
+- **src/App.tsx**: Nova rota protegida
+- **src/components/BottomNav.tsx**: Link no menu mobile
+- **src/components/AppSidebar.tsx**: Link no menu desktop
+- **src/components/Layout.tsx**: Breadcrumb atualizado
+
+### Padrões Técnicos Estabelecidos
+
+#### Cálculos Financeiros
+- **Custo por Hora**: Obtido via businessSettingsService
+- **Fórmula Padrão**: (Custo/Hora ÷ 60) × Minutos + Materiais
+- **Margem de Lucro**: Percentual aplicado sobre custo total
+- **Atualização em Tempo Real**: useMemo para performance
+
+#### UX/UI Patterns
+- **Accordion para Funcionalidades Extras**: Mantém formulários limpos
+- **Inputs Dinâmicos**: Botões de adicionar/remover para listas
+- **Feedback Visual**: Resultados destacados em cards
+- **Responsividade**: Layout adaptativo mobile/desktop
+
+---
+
 **Data de conclusão da Parte 1**: $(date)
 **Status**: ✅ Concluída e testada
 **Build**: ✅ Funcionando (npm run build)
 **Preview**: ✅ Responsivo em todas as telas
+
+## Parte 2 - Concluída ✅
+
+### Widget de Aniversariantes
+
+#### Componente BirthdayWidget.tsx
+- **Funcionalidade**: Exibe pacientes que fazem aniversário no mês atual
+- **Integração**: Conectado ao Supabase via patientsService
+- **Filtro**: Busca e filtra pacientes por mês de nascimento
+- **UI**: Card do ShadCN com lista de aniversariantes
+- **Estados**: Loading, erro e lista vazia tratados
+- **Responsivo**: Adaptado para mobile e desktop
+
+#### Integração no Dashboard
+- **Layout**: Adicionado à grade principal do Dashboard
+- **Posicionamento**: Junto com SeedDataButton e DashboardCalendar
+- **Estilo**: Consistente com outros cards do sistema
+
+#### Correções de Funcionalidade
+- **Edição de Pacientes**: Corrigido problema que criava novos registros ao invés de editar
+- **Modal vs Navegação**: Separado botões de ação para evitar conflitos
+- **Botões de Ação**: 
+  - Eye (👁️): Ver detalhes (navega para página)
+  - Edit (✏️): Editar (abre modal)
+  - Trash2 (🗑️): Excluir (confirmação)
+- **Ícones**: Padronizado com Lucide React para consistência visual
+
+#### Melhorias de UX
+- **Títulos explicativos**: Tooltips nos botões de ação
+- **Separação clara**: Funcionalidades distintas para cada botão
+- **Feedback visual**: Estados de loading e erro apropriados
+
+---
+
+**Data de conclusão da Parte 2**: $(date)
+**Status**: ✅ Concluída e testada
+**Funcionalidades**: ✅ Widget de aniversariantes, edição de pacientes corrigida
+**UI/UX**: ✅ Ícones padronizados, botões de ação organizados
+
+## Parte 3 - Em Desenvolvimento 🚧
+
+### Próximas Funcionalidades
+- [ ] A definir conforme necessidades do projeto
+- [ ] Manter padrões estabelecidos nas partes anteriores
+- [ ] Seguir diretrizes de responsividade e UX
+
+---
+
+**Início da Parte 3**: $(date)
+**Status**: 🚧 Em desenvolvimento

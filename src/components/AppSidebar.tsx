@@ -7,7 +7,11 @@ import {
   FileText,
   LogOut,
   User,
-  ChevronUp
+  ChevronUp,
+  DollarSign,
+  Settings,
+  Calculator,
+  TrendingUp
 } from 'lucide-react'
 import {
   Sidebar,
@@ -41,14 +45,34 @@ const navigationItems = [
     icon: Users,
   },
   {
+    title: 'Agendamentos',
+    url: '/appointments',
+    icon: Calendar,
+  },
+  {
     title: 'Procedimentos',
     url: '/procedures',
     icon: FileText,
   },
   {
-    title: 'Agendamentos',
-    url: '/appointments',
-    icon: Calendar,
+    title: 'Despesas Fixas',
+    url: '/expenses',
+    icon: DollarSign,
+  },
+  {
+    title: 'Calculadora Rápida',
+    url: '/tools/price-simulator',
+    icon: Calculator,
+  },
+  {
+    title: 'Config. Financeiras',
+    url: '/settings/financial',
+    icon: TrendingUp,
+  },
+  {
+    title: 'Configurações',
+    url: '/settings',
+    icon: Settings,
   },
 ]
 

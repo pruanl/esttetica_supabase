@@ -9,7 +9,10 @@ import { Procedures } from '@/pages/Procedures'
 import { Patients } from '@/pages/Patients'
 import { PatientDetailPage } from '@/pages/PatientDetailPage'
 import { Appointments } from '@/pages/Appointments'
-import { Settings } from '@/pages/Settings'
+import { SettingsPage } from '@/pages/SettingsPage'
+import ExpensesPage from '@/pages/ExpensesPage'
+import FinancialSettingsPage from '@/pages/FinancialSettingsPage'
+import PriceSimulatorPage from '@/pages/tools/PriceSimulatorPage'
 import { Layout } from '@/components/Layout'
 
 const AppRoutes: React.FC = () => {
@@ -88,7 +91,37 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <Layout>
-              <Settings />
+              <SettingsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/financial"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <FinancialSettingsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/expenses"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ExpensesPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tools/price-simulator"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <PriceSimulatorPage />
             </Layout>
           </ProtectedRoute>
         }
