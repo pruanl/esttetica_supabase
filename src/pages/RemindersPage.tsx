@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+
 import { Button } from '../components/ui/button'
 import { Calendar, MessageCircle, CheckCircle } from 'lucide-react'
 import { format } from 'date-fns'
@@ -16,10 +16,10 @@ interface ReminderAppointment {
   patient: {
     name: string
     phone: string
-  }
+  }[]
   procedure: {
     name: string
-  }
+  }[]
 }
 
 export default function RemindersPage() {
@@ -163,29 +163,29 @@ export default function RemindersPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
                           <div>
                             <div className="text-sm text-muted-foreground">Paciente</div>
-                            <div className="font-medium">{appointment.patient.name}</div>
+                            <div className="font-medium">{appointment.patient[0]?.name}</div>
                           </div>
                           <div>
                             <div className="text-sm text-muted-foreground">Procedimento</div>
-                            <div className="text-sm">{appointment.procedure.name}</div>
+                            <div className="text-sm">{appointment.procedure[0]?.name}</div>
                           </div>
                           <div>
                             <div className="text-sm text-muted-foreground">Telefone</div>
-                            <div className="text-sm">{appointment.patient.phone || 'Não informado'}</div>
+                            <div className="text-sm">{appointment.patient[0]?.phone || 'Não informado'}</div>
                           </div>
                         </div>
                       </div>
 
                       {/* Botões */}
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:min-w-fit">
-                        {appointment.patient.phone && (
+                        {appointment.patient[0]?.phone && (
                           <Button
                             size="sm"
                             variant="outline"
                             className="w-full sm:w-auto justify-center"
                             onClick={() => openWhatsApp(
-                              appointment.patient.phone,
-                              appointment.patient.name,
+                              appointment.patient[0]?.phone,
+                              appointment.patient[0]?.name,
                               appointment.appointment_date
                             )}
                           >

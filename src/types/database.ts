@@ -84,6 +84,7 @@ export interface BusinessSettings {
 export type PatientInsert = Omit<Patient, 'id' | 'created_at' | 'updated_at'>;
 export type ProcedureInsert = Omit<Procedure, 'id' | 'created_at' | 'updated_at'>;
 export type AppointmentInsert = Omit<Appointment, 'id' | 'created_at' | 'updated_at'>;
+export type TransactionInsert = Omit<Transaction, 'id' | 'created_at'>;
 export type FixedExpenseInsert = Omit<FixedExpense, 'id' | 'created_at' | 'updated_at'>;
 export type BusinessSettingsInsert = Omit<BusinessSettings, 'id' | 'created_at' | 'updated_at'>;
 
@@ -91,11 +92,12 @@ export type BusinessSettingsInsert = Omit<BusinessSettings, 'id' | 'created_at' 
 export type PatientUpdate = Partial<PatientInsert>;
 export type ProcedureUpdate = Partial<ProcedureInsert>;
 export type AppointmentUpdate = Partial<Omit<Appointment, 'id' | 'created_at' | 'updated_at'>>;
+export type TransactionUpdate = Partial<TransactionInsert>;
 export type FixedExpenseUpdate = Partial<FixedExpenseInsert>;
 export type BusinessSettingsUpdate = Partial<BusinessSettingsInsert>;
 
 // Database type for Supabase
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       patients: {
@@ -113,6 +115,11 @@ export interface Database {
         Insert: AppointmentInsert;
         Update: AppointmentUpdate;
       };
+      transactions: {
+        Row: Transaction;
+        Insert: TransactionInsert;
+        Update: TransactionUpdate;
+      };
       fixed_expenses: {
         Row: FixedExpense;
         Insert: FixedExpenseInsert;
@@ -123,6 +130,18 @@ export interface Database {
         Insert: BusinessSettingsInsert;
         Update: BusinessSettingsUpdate;
       };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
     };
   };
 }

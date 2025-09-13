@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { DollarSign, TrendingUp, Clock } from 'lucide-react';
 import { businessSettingsService } from '@/services/businessSettingsService';
 import { expensesService } from '@/services/expensesService';
-import type { BusinessSettings, FixedExpense } from '@/types/database';
+import type { FixedExpense } from '@/types/database';
 
 interface CostCalculation {
   totalMonthlyHours: number;

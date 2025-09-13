@@ -3,13 +3,14 @@ import { X, Calculator } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { ProceduresService } from '@/services/proceduresService'
 import { businessSettingsService } from '@/services/businessSettingsService'
 import { expensesService } from '@/services/expensesService'
-import type { Procedure, ProcedureInsert, ProcedureUpdate, BusinessSettings, FixedExpense } from '@/types/database'
+import { useAuth } from '@/contexts/AuthContext'
+import type { Procedure, ProcedureInsert, ProcedureUpdate, FixedExpense } from '@/types/database'
 
 interface ProcedureFormProps {
   procedure?: Procedure | null
@@ -17,6 +18,7 @@ interface ProcedureFormProps {
 }
 
 export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
+  const { user } = useAuth()
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -38,8 +40,8 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
         description: procedure.description || '',
         duration_minutes: procedure.duration_minutes,
         price: procedure.price,
-        cost: procedure.cost,
-        material_cost: procedure.cost // Usar o campo cost existente como material_cost
+        cost: procedure.cost || 0,
+        material_cost: procedure.cost || 0 // Usar o campo cost existente como material_cost
       })
     }
     loadCalculatorData()
@@ -52,7 +54,7 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
       // Buscar configurações financeiras
       const settings = await businessSettingsService.getSettings()
       if (settings) {
-        setProfitMargin(settings.desired_profit_margin)
+        setProfitMargin(settings.desired_profit_margin || 0)
         
         // Buscar despesas fixas
         const expenses = await expensesService.getAll()
@@ -116,7 +118,8 @@ export function ProcedureForm({ procedure, onClose }: ProcedureFormProps) {
           description: formData.description || undefined,
           duration_minutes: formData.duration_minutes,
           price: formData.price,
-          cost: formData.material_cost
+          cost: formData.material_cost,
+          user_id: user!.id
         }
         await ProceduresService.create(insertData)
       }

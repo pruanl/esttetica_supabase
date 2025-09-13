@@ -18,7 +18,7 @@ import {
   MessageCircle,
   Banknote,
   Brain,
-  Target
+
 } from 'lucide-react'
 import {
   Sidebar,

@@ -10,10 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export const Settings: React.FC = () => {
   const { user, signOut } = useAuth()
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
@@ -41,7 +39,7 @@ export const Settings: React.FC = () => {
     setPasswordMessage(null)
 
     try {
-      const { data, error } = await supabase.auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password: newPassword
       })
 

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { businessSettingsService } from '@/services/businessSettingsService'
 import { expensesService } from '@/services/expensesService'
-import type { BusinessSettings, FixedExpense } from '@/types/database'
+import type { FixedExpense } from '@/types/database'
 
 interface Material {
   id: string
@@ -17,7 +17,6 @@ interface Material {
 const PriceSimulatorPage: React.FC = () => {
   // Estados para dados carregados
   const [costPerHour, setCostPerHour] = useState<number>(0)
-  const [defaultProfitMargin, setDefaultProfitMargin] = useState<number>(0.3) // 30% padrão
   const [loading, setLoading] = useState(true)
 
   // Estados para inputs do usuário
@@ -38,7 +37,6 @@ const PriceSimulatorPage: React.FC = () => {
       const businessSettings = await businessSettingsService.getSettings()
       if (businessSettings?.desired_profit_margin) {
         const marginPercent = businessSettings.desired_profit_margin * 100
-        setDefaultProfitMargin(businessSettings.desired_profit_margin)
         setProfitMargin(marginPercent)
       }
 
