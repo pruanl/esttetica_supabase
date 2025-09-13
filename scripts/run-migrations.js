@@ -38,19 +38,38 @@ async function runMigrations() {
       console.log('⚠️  Não foi possível verificar a sessão, mas isso é normal para migrations')
     }
     
-    // Ler o arquivo de migration
+    // Ler todos os arquivos de migration
     const migrationsDir = path.join(__dirname, '..', 'migrations')
-    const migrationFile = path.join(migrationsDir, '001_initial_schema.sql')
+    const migrationFiles = fs.readdirSync(migrationsDir)
+      .filter(file => file.endsWith('.sql'))
+      .sort() // Ordena alfabeticamente (001, 002, 003, etc.)
     
-    if (!fs.existsSync(migrationFile)) {
-      console.error('❌ Arquivo de migration não encontrado:', migrationFile)
+    if (migrationFiles.length === 0) {
+      console.error('❌ Nenhum arquivo de migration encontrado em:', migrationsDir)
       process.exit(1)
     }
     
-    const sql = fs.readFileSync(migrationFile, 'utf8')
+    // Combinar todas as migrations em um único SQL
+    let combinedSql = ''
+    console.log('\n📄 Migrations encontradas:')
     
-    console.log('\n📄 Migration encontrada: 001_initial_schema.sql')
-    console.log('📊 Tamanho do arquivo:', (sql.length / 1024).toFixed(2), 'KB')
+    for (const file of migrationFiles) {
+      const filePath = path.join(migrationsDir, file)
+      const sql = fs.readFileSync(filePath, 'utf8')
+      combinedSql += `-- ========================================\n`
+      combinedSql += `-- Migration: ${file}\n`
+      combinedSql += `-- ========================================\n\n`
+      combinedSql += sql + '\n\n'
+      
+      console.log(`✅ ${file} (${(sql.length / 1024).toFixed(2)} KB)`)
+    }
+    
+    console.log('\n📊 Total de migrations:', migrationFiles.length)
+    console.log('📊 Tamanho total:', (combinedSql.length / 1024).toFixed(2), 'KB')
+    
+    // Criar arquivo temporário para facilitar
+    const tempFile = path.join(process.cwd(), 'temp_migration.sql')
+    fs.writeFileSync(tempFile, combinedSql)
     
     console.log('\n⚠️  IMPORTANTE: Execução Manual Necessária')
     console.log('==========================================\n')
@@ -59,8 +78,8 @@ async function runMigrations() {
     console.log('\n1. Acesse: https://supabase.com/dashboard')
     console.log('2. Selecione seu projeto')
     console.log('3. Vá para "SQL Editor"')
-    console.log('4. Copie o conteúdo do arquivo:')
-    console.log('   📁', migrationFile)
+    console.log('4. Copie o conteúdo do arquivo temporário:')
+    console.log('   📁', tempFile)
     console.log('5. Cole no editor SQL e execute')
     
     console.log('\n📋 O que será criado:')
@@ -80,9 +99,6 @@ async function runMigrations() {
     console.log('\n💡 Dica: Salve o conteúdo da migration em um arquivo .sql')
     console.log('para facilitar a execução no Supabase Dashboard.')
     
-    // Criar arquivo temporário para facilitar
-    const tempFile = path.join(process.cwd(), 'temp_migration.sql')
-    fs.writeFileSync(tempFile, sql)
     console.log('\n📝 Arquivo temporário criado:', tempFile)
     console.log('   Você pode copiar este arquivo e colar no Supabase Dashboard')
     

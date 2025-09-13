@@ -1,7 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { DashboardCalendar } from '@/components/DashboardCalendar'
 import { SeedDataButton } from '@/components/SeedDataButton'
 import BirthdayWidget from '@/components/BirthdayWidget'
 import UpcomingAppointmentsWidget from '@/components/UpcomingAppointmentsWidget'
@@ -75,12 +74,11 @@ export const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           <CostPerHourWidget />
-          <UpcomingAppointmentsWidget />
           <BirthdayWidget />
           <SeedDataButton />
         </div>
-        <div>
-          <DashboardCalendar />
+        <div className="space-y-6">
+          <UpcomingAppointmentsWidget />
         </div>
       </div>
     </div>

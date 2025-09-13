@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useState } from 'react'
 import {
   Home,
   Users,
@@ -8,10 +9,16 @@ import {
   LogOut,
   User,
   ChevronUp,
+  ChevronDown,
+  ChevronRight,
   DollarSign,
   Settings,
   Calculator,
-  TrendingUp
+  TrendingUp,
+  MessageCircle,
+  Banknote,
+  Brain,
+  Target
 } from 'lucide-react'
 import {
   Sidebar,
@@ -33,52 +40,97 @@ import {
 } from './ui/dropdown-menu'
 import { Avatar, AvatarFallback } from './ui/avatar'
 
-const navigationItems = [
-  {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: Home,
-  },
-  {
-    title: 'Pacientes',
-    url: '/patients',
-    icon: Users,
-  },
-  {
-    title: 'Agendamentos',
-    url: '/appointments',
-    icon: Calendar,
-  },
-  {
-    title: 'Procedimentos',
-    url: '/procedures',
-    icon: FileText,
-  },
-  {
-    title: 'Despesas Fixas',
-    url: '/expenses',
-    icon: DollarSign,
-  },
-  {
-    title: 'Calculadora Rápida',
-    url: '/tools/price-simulator',
-    icon: Calculator,
-  },
-  {
-    title: 'Config. Financeiras',
-    url: '/settings/financial',
-    icon: TrendingUp,
-  },
-  {
-    title: 'Configurações',
-    url: '/settings',
-    icon: Settings,
-  },
-]
+const navigationStructure = {
+  diaDia: [
+    {
+      title: 'Dashboard',
+      url: '/dashboard',
+      icon: Home,
+      description: 'Visão geral, calendário, widgets de lembretes e aniversariantes'
+    },
+    {
+      title: 'Agenda',
+      url: '/appointments',
+      icon: Calendar,
+      description: 'A visão focada no calendário e na lista de compromissos'
+    },
+    {
+      title: 'Pacientes',
+      url: '/patients',
+      icon: Users,
+      description: 'A lista e o cadastro de todos os clientes'
+    }
+  ],
+  gestao: [
+    {
+      title: 'Procedimentos',
+      url: '/procedures',
+      icon: FileText,
+      description: 'Seu catálogo de serviços e onde a calculadora de precificação vive'
+    },
+    {
+      title: 'Financeiro',
+      icon: DollarSign,
+      description: 'Centraliza todas as ferramentas financeiras',
+      submenu: [
+        {
+          title: 'Fluxo de Caixa',
+          url: '/cash-flow',
+          icon: Banknote
+        },
+        {
+          title: 'Despesas',
+          url: '/expenses',
+          icon: TrendingUp
+        }
+      ]
+    },
+    {
+      title: 'Comunicação',
+      icon: Brain,
+      description: 'Centraliza as ferramentas de relacionamento',
+      submenu: [
+        {
+          title: 'Lembretes',
+          url: '/reminders',
+          icon: MessageCircle
+        }
+      ]
+    }
+  ],
+  ferramentas: [
+    {
+      title: 'Calculadora Rápida',
+      url: '/tools/price-simulator',
+      icon: Calculator,
+      description: 'O simulador de preços que não salva dados'
+    }
+  ],
+  configuracoes: [
+    {
+      title: 'Configurações',
+      icon: Settings,
+      description: 'Um item que agrupa tudo o que é configurado raramente',
+      submenu: [
+        {
+          title: 'Financeiras',
+          url: '/settings/financial',
+          icon: DollarSign
+        },
+        {
+          title: 'Gerais',
+          url: '/settings',
+          icon: Settings
+        }
+      ]
+    }
+  ]
+}
 
 export function AppSidebar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([])
 
   const handleLogout = async () => {
     try {
@@ -87,6 +139,58 @@ export function AppSidebar() {
       console.error('Erro ao fazer logout:', error)
     }
   }
+
+  const toggleSubmenu = (menuTitle: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menuTitle) 
+        ? prev.filter(title => title !== menuTitle)
+        : [...prev, menuTitle]
+    )
+  }
+
+  const isSubmenuExpanded = (menuTitle: string) => expandedMenus.includes(menuTitle)
+
+  const renderMenuItem = (item: any, isSubmenuItem = false) => {
+       const hasSubmenu = item.submenu && item.submenu.length > 0
+       const isExpanded = isSubmenuExpanded(item.title)
+       const isActive = item.url && location.pathname === item.url
+       const paddingClass = isSubmenuItem ? 'pl-8' : ''
+   
+       if (hasSubmenu) {
+         return (
+           <div key={item.title}>
+             <SidebarMenuItem>
+               <SidebarMenuButton
+                 onClick={() => toggleSubmenu(item.title)}
+                 className={`${paddingClass} justify-between`}
+               >
+                 <div className="flex items-center gap-2">
+                   <item.icon className="h-4 w-4" />
+                   <span>{item.title}</span>
+                 </div>
+                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+               </SidebarMenuButton>
+             </SidebarMenuItem>
+             {isExpanded && (
+               <div className="ml-4">
+                 {item.submenu.map((subItem: any) => renderMenuItem(subItem, true))}
+               </div>
+             )}
+           </div>
+         )
+       }
+   
+       return (
+         <SidebarMenuItem key={item.title}>
+           <SidebarMenuButton asChild isActive={isActive} className={paddingClass}>
+             <Link to={item.url}>
+               <item.icon className="h-4 w-4" />
+               <span>{item.title}</span>
+             </Link>
+           </SidebarMenuButton>
+         </SidebarMenuItem>
+       )
+     }
 
   return (
     <Sidebar>
@@ -97,23 +201,41 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent>
+        {/* DIA A DIA */}
         <SidebarGroup>
-          <SidebarGroupLabel>Aplicação</SidebarGroupLabel>
+          <SidebarGroupLabel>DIA A DIA</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => {
-                const isActive = location.pathname === item.url
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
-                      <Link to={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              })}
+              {navigationStructure.diaDia.map(item => renderMenuItem(item))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* GESTÃO */}
+        <SidebarGroup>
+          <SidebarGroupLabel>GESTÃO</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationStructure.gestao.map(item => renderMenuItem(item))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* FERRAMENTAS */}
+        <SidebarGroup>
+          <SidebarGroupLabel>FERRAMENTAS</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationStructure.ferramentas.map(item => renderMenuItem(item))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* CONFIGURAÇÕES */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationStructure.configuracoes.map(item => renderMenuItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -135,8 +257,8 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      {user?.email?.split('@')[0] || 'Usuário'}
-                    </span>
+                       {user?.email?.split('@')[0] || 'Usuário'}
+                     </span>
                     <span className="truncate text-xs">
                       {user?.email || 'email@exemplo.com'}
                     </span>

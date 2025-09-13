@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { Loader2, Save, ArrowLeft } from 'lucide-react'
+import { Loader2, Save, ArrowLeft, TrendingUp } from 'lucide-react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -52,7 +53,7 @@ export default function FinancialSettingsPage() {
           form.reset({
             work_days_per_week: settings.work_days_per_week,
             work_hours_per_day: settings.work_hours_per_day,
-            desired_profit_margin: settings.desired_profit_margin * 100 // Converter para porcentagem
+            desired_profit_margin: (settings.desired_profit_margin || 0) * 100 // Converter para porcentagem
           })
         }
       } catch (err) {
@@ -104,6 +105,8 @@ export default function FinancialSettingsPage() {
     return weeklyHours ? (weeklyHours * 4.33).toFixed(1) : '0'
   }
 
+  const isMobile = useIsMobile();
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
@@ -118,19 +121,13 @@ export default function FinancialSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    <div className="container mx-auto p-4 sm:p-6 max-w-2xl">
       <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/settings')}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar para Configurações
-        </Button>
-        
-        <h1 className="text-3xl font-bold">Configurações Financeiras</h1>
-        <p className="text-muted-foreground mt-2">
+        <div className="flex items-center gap-2 mb-2">
+          <TrendingUp className="h-6 w-6" />
+          <h1 className="text-xl sm:text-2xl font-bold">Configurações Financeiras</h1>
+        </div>
+        <p className="text-sm sm:text-base text-gray-600">
           Configure os parâmetros do seu negócio para cálculos de preços e lucro
         </p>
       </div>
@@ -176,6 +173,8 @@ export default function FinancialSettingsPage() {
                         {...field}
                         onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         placeholder="Ex: 5"
+                        className="text-base"
+                        inputMode="numeric"
                       />
                     </FormControl>
                     <FormDescription>
@@ -201,6 +200,8 @@ export default function FinancialSettingsPage() {
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         placeholder="Ex: 8.5"
+                        className="text-base"
+                        inputMode="decimal"
                       />
                     </FormControl>
                     <FormDescription>
@@ -225,6 +226,8 @@ export default function FinancialSettingsPage() {
                         {...field}
                         onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         placeholder="Ex: 30"
+                        className="text-base"
+                        inputMode="numeric"
                       />
                     </FormControl>
                     <FormDescription>
@@ -245,11 +248,11 @@ export default function FinancialSettingsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   type="submit"
                   disabled={isSaving}
-                  className="flex-1"
+                  className="flex-1 text-base"
                 >
                   {isSaving ? (
                     <>
@@ -259,7 +262,7 @@ export default function FinancialSettingsPage() {
                   ) : (
                     <>
                       <Save className="h-4 w-4 mr-2" />
-                      {existingSettings ? 'Atualizar Configurações' : 'Salvar Configurações'}
+                      {isMobile ? 'Salvar' : (existingSettings ? 'Atualizar Configurações' : 'Salvar Configurações')}
                     </>
                   )}
                 </Button>
@@ -269,6 +272,7 @@ export default function FinancialSettingsPage() {
                   variant="outline"
                   onClick={() => navigate('/settings')}
                   disabled={isSaving}
+                  className="text-base"
                 >
                   Cancelar
                 </Button>

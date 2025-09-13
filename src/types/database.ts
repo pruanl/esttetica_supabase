@@ -37,13 +37,25 @@ export interface Appointment {
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   notes?: string;
   is_active: boolean;
+  reminder_sent: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export interface AppointmentWithDetails extends Appointment {
-  patient: Patient;
-  procedure: Procedure;
+  patient: Patient
+  procedure: Procedure
+}
+
+export interface Transaction {
+  id: number
+  created_at: string
+  description: string
+  amount: number
+  type: 'income' | 'expense'
+  entry_date: string
+  user_id: string
+  appointment_id?: string
 }
 
 export interface FixedExpense {
@@ -78,7 +90,7 @@ export type BusinessSettingsInsert = Omit<BusinessSettings, 'id' | 'created_at' 
 // Update types
 export type PatientUpdate = Partial<PatientInsert>;
 export type ProcedureUpdate = Partial<ProcedureInsert>;
-export type AppointmentUpdate = Partial<AppointmentInsert>;
+export type AppointmentUpdate = Partial<Omit<Appointment, 'id' | 'created_at' | 'updated_at'>>;
 export type FixedExpenseUpdate = Partial<FixedExpenseInsert>;
 export type BusinessSettingsUpdate = Partial<BusinessSettingsInsert>;
 

@@ -3,31 +3,34 @@ import { Plus, Edit, Trash2, Search } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
+
 import { ProceduresService } from '../services/proceduresService'
 import type { Procedure } from '../types/database'
 import { ProcedureForm } from '../components/ProcedureForm'
+import { ConfirmationAlert } from '../components/ConfirmationAlert'
 import { useIsMobile } from '../hooks/use-mobile'
+import { toast } from 'sonner'
 
 export function Procedures() {
   const [procedures, setProcedures] = useState<Procedure[]>([])
   const [filteredProcedures, setFilteredProcedures] = useState<Procedure[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [categories, setCategories] = useState<string[]>([])
+
   const [showForm, setShowForm] = useState(false)
   const [editingProcedure, setEditingProcedure] = useState<Procedure | null>(null)
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [procedureToDelete, setProcedureToDelete] = useState<Procedure | null>(null);
+  const [inUseAlertOpen, setInUseAlertOpen] = useState(false);
   const isMobile = useIsMobile()
 
   useEffect(() => {
     loadProcedures()
-    loadCategories()
   }, [])
 
   useEffect(() => {
     filterProcedures()
-  }, [procedures, searchTerm, selectedCategory])
+  }, [procedures, searchTerm])
 
   const loadProcedures = async () => {
     try {
@@ -41,14 +44,7 @@ export function Procedures() {
     }
   }
 
-  const loadCategories = async () => {
-    try {
-      const data = await ProceduresService.getCategories()
-      setCategories(data)
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error)
-    }
-  }
+
 
   const filterProcedures = () => {
     let filtered = procedures
@@ -60,24 +56,39 @@ export function Procedures() {
       )
     }
 
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(procedure => procedure.category === selectedCategory)
-    }
-
     setFilteredProcedures(filtered)
   }
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este procedimento?')) {
-      try {
-        await ProceduresService.delete(id)
-        await loadProcedures()
-      } catch (error) {
-        console.error('Erro ao excluir procedimento:', error)
-        alert('Erro ao excluir procedimento')
+  const handleDelete = (procedure: Procedure) => {
+    setProcedureToDelete(procedure);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!procedureToDelete) return;
+    
+    try {
+      // Verificar se o procedimento está sendo usado em agendamentos
+      const isUsed = await ProceduresService.isUsedInAppointments(procedureToDelete.id);
+      
+      if (isUsed) {
+        // Fechar o modal de confirmação atual
+        setDeleteConfirmationOpen(false);
+        
+        // Mostrar alerta informativo
+        setInUseAlertOpen(true);
+        return;
       }
+      
+      await ProceduresService.delete(procedureToDelete.id);
+      await loadProcedures();
+      setDeleteConfirmationOpen(false);
+      setProcedureToDelete(null);
+    } catch (error) {
+      console.error('Erro ao excluir procedimento:', error);
+      toast.error('Erro ao excluir procedimento');
     }
-  }
+  };
 
   const handleEdit = (procedure: Procedure) => {
     setEditingProcedure(procedure)
@@ -89,6 +100,30 @@ export function Procedures() {
     setEditingProcedure(null)
     loadProcedures()
   }
+
+  const cancelDelete = () => {
+    setDeleteConfirmationOpen(false);
+    setProcedureToDelete(null);
+  };
+
+  const closeInUseAlert = () => {
+    setInUseAlertOpen(false)
+    setProcedureToDelete(null)
+  }
+
+  const handleArchiveProcedure = async () => {
+    if (!procedureToDelete) return
+
+    try {
+      await ProceduresService.archive(procedureToDelete.id)
+      toast.success("Procedimento arquivado com sucesso.")
+      loadProcedures()
+      closeInUseAlert()
+    } catch (error) {
+      console.error('Erro ao arquivar procedimento:', error)
+      toast.error("Erro ao arquivar procedimento. Tente novamente.")
+    }
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -129,16 +164,6 @@ export function Procedures() {
             className="pl-10"
           />
         </div>
-        <select
-          value={selectedCategory}
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="px-3 py-2 border rounded-md bg-background"
-        >
-          <option value="all">Todas as categorias</option>
-          {categories.map(category => (
-            <option key={category} value={category}>{category}</option>
-          ))}
-        </select>
       </div>
 
       {/* Lista de procedimentos */}
@@ -148,11 +173,11 @@ export function Procedures() {
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-2">Nenhum procedimento encontrado</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || selectedCategory !== 'all'
+                {searchTerm
                   ? 'Tente ajustar os filtros de busca'
                   : 'Comece criando seu primeiro procedimento'}
               </p>
-              {!searchTerm && selectedCategory === 'all' && (
+              {!searchTerm && (
                 <Button onClick={() => setShowForm(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Criar Procedimento
@@ -169,11 +194,6 @@ export function Procedures() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-lg">{procedure.name}</CardTitle>
-                    {procedure.category && (
-                      <Badge variant="secondary" className="mt-1">
-                        {procedure.category}
-                      </Badge>
-                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -184,9 +204,10 @@ export function Procedures() {
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(procedure.id)}
+                      onClick={() => handleDelete(procedure)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -220,6 +241,25 @@ export function Procedures() {
           onClose={handleFormClose}
         />
       )}
+
+      {/* Modais de confirmação */}
+      <ConfirmationAlert
+        isOpen={deleteConfirmationOpen}
+        title="Confirmar Exclusão"
+        description={`Tem certeza que deseja excluir o procedimento "${procedureToDelete?.name}"? Esta ação não pode ser desfeita.`}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        variant="destructive"
+      />
+      
+      <ConfirmationAlert
+          isOpen={inUseAlertOpen}
+          title="Procedimento em uso"
+          description="Este procedimento não pode ser excluído pois possui agendamentos vinculados. Deseja arquivá-lo? Procedimentos arquivados não aparecerão na lista ativa, mas podem ser restaurados posteriormente."
+          onConfirm={handleArchiveProcedure}
+          onCancel={closeInUseAlert}
+          variant="default"
+        />
     </div>
   )
 }

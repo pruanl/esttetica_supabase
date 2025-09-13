@@ -140,4 +140,42 @@ export class ProceduresService {
     const categories = [...new Set((data as any[])?.map(item => item.category).filter(Boolean))]
     return categories.sort()
   }
+
+  static async isUsedInAppointments(procedureId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('procedure_id', procedureId)
+        .eq('is_active', true)
+        .limit(1)
+
+      if (error) {
+        console.error('Erro ao verificar uso do procedimento:', error)
+        throw error
+      }
+
+      return data && data.length > 0
+    } catch (error) {
+      console.error('Erro ao verificar uso do procedimento:', error)
+      throw error
+    }
+  }
+
+  static async archive(id: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('procedures')
+        .update({ is_active: false })
+        .eq('id', id)
+
+      if (error) {
+        console.error('Erro ao arquivar procedimento:', error)
+        throw error
+      }
+    } catch (error) {
+      console.error('Erro ao arquivar procedimento:', error)
+      throw error
+    }
+  }
 }

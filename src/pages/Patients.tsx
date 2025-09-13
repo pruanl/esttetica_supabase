@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { PatientForm } from '../components/PatientForm';
+import { ConfirmationAlert } from '../components/ConfirmationAlert';
 import { patientsService } from '../services/patientsService';
 import type { Patient } from '../types/database';
 import { Users, Plus, Search, Edit, Trash2, Phone, Mail, Calendar, Eye } from 'lucide-react';
@@ -19,6 +20,8 @@ export function Patients() {
   const [searchTerm, setSearchTerm] = useState('');
   const isMobile = useIsMobile();
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 
   useEffect(() => {
     loadPatients();
@@ -61,15 +64,28 @@ export function Patients() {
     setShowForm(true);
   };
 
-  const handleDelete = async (patient: Patient) => {
-    if (window.confirm(`Tem certeza que deseja excluir o paciente "${patient.name}"?`)) {
-      try {
-        await patientsService.deletePatient(patient.id);
-        await loadPatients();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro ao excluir paciente');
-      }
+  const handleDelete = (patient: Patient) => {
+    setPatientToDelete(patient);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!patientToDelete) return;
+    
+    try {
+      await patientsService.deletePatient(patientToDelete.id);
+      await loadPatients();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir paciente');
+    } finally {
+      setDeleteConfirmationOpen(false);
+      setPatientToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmationOpen(false);
+    setPatientToDelete(null);
   };
 
   const handleCancel = () => {
@@ -248,6 +264,15 @@ export function Patients() {
           ))}
         </div>
       )}
+
+      <ConfirmationAlert
+        isOpen={deleteConfirmationOpen}
+        title="Confirmar exclusão"
+        description={`Tem certeza que deseja excluir o paciente "${patientToDelete?.name}"? Esta ação não pode ser desfeita.`}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        variant="destructive"
+      />
     </div>
   );
 }

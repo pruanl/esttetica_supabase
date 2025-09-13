@@ -3,8 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Separator } from '../components/ui/separator'
-import { Settings, User, Bell, Shield, Palette } from 'lucide-react'
+import { Settings,Shield, Palette } from 'lucide-react'
 
 export const SettingsPage: React.FC = () => {
   return (
@@ -15,62 +14,7 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       <div className="grid gap-6">
-        {/* Perfil do Usuário */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Perfil do Usuário
-            </CardTitle>
-            <CardDescription>
-              Gerencie suas informações pessoais e preferências de conta
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome</Label>
-                <Input id="name" placeholder="Seu nome" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="seu@email.com" />
-              </div>
-            </div>
-            <Button>Salvar Alterações</Button>
-          </CardContent>
-        </Card>
-
-        {/* Notificações */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Notificações
-            </CardTitle>
-            <CardDescription>
-              Configure como você deseja receber notificações
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Notificações por Email</p>
-                <p className="text-sm text-muted-foreground">Receba notificações sobre agendamentos por email</p>
-              </div>
-              <Button variant="outline" size="sm">Ativar</Button>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Lembretes de Agendamento</p>
-                <p className="text-sm text-muted-foreground">Receba lembretes antes dos agendamentos</p>
-              </div>
-              <Button variant="outline" size="sm">Ativar</Button>
-            </div>
-          </CardContent>
-        </Card>
-
+      
         {/* Segurança */}
         <Card>
           <CardHeader>
