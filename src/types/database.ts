@@ -83,6 +83,7 @@ export interface BusinessSettings {
 export interface Profile {
   id: string;
   clinic_name?: string;
+  username?: string;
   whatsapp_number?: string;
   profile_avatar_url?: string;
   cover_photo_url?: string;

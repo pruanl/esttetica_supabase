@@ -15,6 +15,7 @@ import {
   DollarSign,
   Settings
 } from 'lucide-react'
+import logo from '@/assets/images/logo.png'
 
 interface SidebarProps {
   isOpen?: boolean
@@ -92,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link to="/dashboard" className="flex items-center gap-2 font-semibold" onClick={handleLinkClick}>
-              <span className="text-lg">Estética</span>
+              <img src={logo} alt="Estética" className="h-8 w-auto" />
             </Link>
             {/* Botão fechar para mobile */}
             <Button

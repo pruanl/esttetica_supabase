@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Upload, MapPin, Camera, Trash2, Search } from 'lucide-react';
+import { Loader2, Upload, MapPin, Camera, Trash2, Search, Link2, CheckCircle, XCircle, Copy } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,9 +16,15 @@ import { ImageCropModal } from '@/components/ui/image-crop-modal';
 
 import { ProfileService } from '@/services/profileService';
 import type { GalleryPhoto } from '@/types/database';
+import { 
+  validateUsername, 
+  generateUsernameSuggestions,
+  type UsernameAvailabilityResult 
+} from '@/utils/usernameValidation';
 
 const profileSchema = z.object({
   clinic_name: z.string().min(1, 'Nome da clínica é obrigatório'),
+  username: z.string().optional(),
   whatsapp_number: z.string().min(1, 'Número do WhatsApp é obrigatório'),
   profile_avatar_url: z.string().optional(),
   cover_photo_url: z.string().optional(),
@@ -50,11 +56,17 @@ export default function ClinicProfilePage() {
   const [cropType, setCropType] = useState<'avatar' | 'cover'>('avatar');
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [addressFromCep, setAddressFromCep] = useState(false);
+  
+  // Username validation states
+  const [usernameAvailability, setUsernameAvailability] = useState<UsernameAvailabilityResult | null>(null);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       clinic_name: '',
+      username: '',
       whatsapp_number: '',
       profile_avatar_url: '',
       cover_photo_url: '',
@@ -89,6 +101,7 @@ export default function ClinicProfilePage() {
       if (profileData) {
         form.reset({
           clinic_name: profileData.clinic_name || '',
+          username: profileData.username || '',
           whatsapp_number: profileData.whatsapp_number || '',
           profile_avatar_url: profileData.profile_avatar_url || '',
           cover_photo_url: profileData.cover_photo_url || '',
@@ -105,6 +118,12 @@ export default function ClinicProfilePage() {
           youtube_url: profileData.youtube_url || '',
           facebook_url: profileData.facebook_url || '',
         });
+        
+        // Generate username suggestions if no username exists
+        if (!profileData.username && profileData.clinic_name) {
+          const suggestions = generateUsernameSuggestions(profileData.clinic_name);
+          setUsernameSuggestions(suggestions);
+        }
       }
 
       setGalleryPhotos(galleryData);
@@ -128,6 +147,70 @@ export default function ClinicProfilePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Username validation function
+  const checkUsernameAvailability = async (username: string) => {
+    if (!username || username.trim() === '') {
+      setUsernameAvailability(null);
+      return;
+    }
+
+    const validation = validateUsername(username);
+    if (!validation.isValid) {
+      setUsernameAvailability({
+        available: false,
+        formatted_username: validation.formatted,
+        message: validation.message
+      });
+      return;
+    }
+
+    try {
+      setCheckingUsername(true);
+      const result = await ProfileService.checkUsernameAvailability(validation.formatted);
+      setUsernameAvailability(result);
+    } catch (error) {
+      console.error('Error checking username:', error);
+      setUsernameAvailability({
+        available: false,
+        formatted_username: validation.formatted,
+        message: 'Erro ao verificar disponibilidade'
+      });
+    } finally {
+      setCheckingUsername(false);
+    }
+  };
+
+  // Handle username change with debounce
+  const handleUsernameChange = (value: string) => {
+    form.setValue('username', value);
+    
+    // Clear previous availability check
+    setUsernameAvailability(null);
+    
+    // Debounce the availability check
+    const timeoutId = setTimeout(() => {
+      checkUsernameAvailability(value);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  };
+
+  // Handle username suggestion click
+  const handleSuggestionClick = (suggestion: string) => {
+    form.setValue('username', suggestion);
+    checkUsernameAvailability(suggestion);
+  };
+
+  // Função para copiar URL do perfil
+  const copyProfileUrl = (username: string) => {
+    const url = `https://bio.estettica.com/${username}`;
+    navigator.clipboard.writeText(url).then(() => {
+      toast.success('URL copiada para a área de transferência!');
+    }).catch(() => {
+      toast.error('Erro ao copiar URL');
+    });
   };
 
   // Função para formatar telefone (copiada do PatientForm)
@@ -360,8 +443,102 @@ export default function ClinicProfilePage() {
                       </FormItem>
                     )}
                   />
-
                 </div>
+
+                {/* Username Field */}
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username do Perfil</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <div className="relative">
+                            <Input 
+                              placeholder="minha-clinica" 
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e.target.value);
+                                handleUsernameChange(e.target.value);
+                              }}
+                              className={
+                                usernameAvailability?.available === false 
+                                  ? 'border-red-500' 
+                                  : usernameAvailability?.available === true 
+                                  ? 'border-green-500' 
+                                  : ''
+                              }
+                            />
+                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                              {checkingUsername && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                              {!checkingUsername && usernameAvailability?.available === true && (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              )}
+                              {!checkingUsername && usernameAvailability?.available === false && (
+                                <XCircle className="h-4 w-4 text-red-500" />
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* URL Preview */}
+                          {field.value && (
+                            <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground bg-gray-50 p-2 rounded-md">
+                              <div className="flex items-center gap-2">
+                                <Link2 className="h-4 w-4" />
+                                <span>bio.estettica.com/{field.value}</span>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyProfileUrl(field.value || '')}
+                                className="h-6 w-6 p-0 hover:bg-gray-200"
+                                title="Copiar URL"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                          
+                          {/* Validation Message */}
+                          {usernameAvailability?.message && (
+                            <p className={`text-sm ${
+                              usernameAvailability.available ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {usernameAvailability.message}
+                            </p>
+                          )}
+                          
+                          {/* Username Suggestions */}
+                          {usernameSuggestions.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">Sugestões:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {usernameSuggestions.map((suggestion) => (
+                                  <Button
+                                    key={suggestion}
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleSuggestionClick(suggestion)}
+                                    className="text-xs"
+                                  >
+                                    {suggestion}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Este será o link público do seu perfil. Use apenas letras, números e hífens.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <div className="flex justify-end">
                   <Button type="submit" disabled={isLoading}>

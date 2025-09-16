@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { Avatar, AvatarFallback } from './ui/avatar'
+import logo from '@/assets/images/logo.png'
 
 const navigationStructure = {
   diaDia: [
@@ -201,7 +202,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <Link to="/dashboard" className="flex items-center gap-2 font-semibold px-2 py-1">
-          <span className="text-lg">Estética</span>
+          <img src={logo} alt="Estética" className="h-8 w-auto" />
         </Link>
       </SidebarHeader>
       

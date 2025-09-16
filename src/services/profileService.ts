@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import type { Profile, ProfileInsert, GalleryPhoto } from '../types/database';
+import type { UsernameAvailabilityResult } from '../utils/usernameValidation';
 
 export class ProfileService {
   // Get current user's profile
@@ -210,6 +211,40 @@ export class ProfileService {
     } catch (error) {
       console.error('Error fetching public gallery photos:', error);
       throw error;
+    }
+  }
+
+  // Check username availability
+  static async checkUsernameAvailability(username: string): Promise<UsernameAvailabilityResult> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .neq('id', user.id) // Exclude current user
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      const available = !data; // Available if no data found
+
+      return {
+        available,
+        formatted_username: username,
+        message: available ? 'Username disponível' : 'Username já está em uso'
+      };
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      return {
+        available: false,
+        formatted_username: username,
+        message: 'Erro ao verificar disponibilidade'
+      };
     }
   }
 }
