@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { LayoutDashboard, Calendar, Users, MoreHorizontal, Settings, LogOut, ClipboardList, DollarSign, Calculator, TrendingUp, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, MoreHorizontal, Settings, LogOut, ClipboardList, DollarSign, Calculator, TrendingUp, MessageCircle, Building2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +26,7 @@ const menuSections = {
     { href: "/tools/price-simulator", label: "Calculadora Rápida", icon: Calculator },
   ],
   configuracoes: [
+    { href: "/profile/clinic", label: "Perfil da Clínica", icon: Building2 },
     { href: "/settings", label: "Configurações Gerais", icon: Settings },
     { href: "/settings/financial", label: "Configurações Financeiras", icon: DollarSign },
   ]

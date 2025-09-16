@@ -441,7 +441,23 @@ export const Appointments: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2 ml-4 justify-end">
+                      {/* Botões secundários (Editar e Excluir) */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(appointment)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(appointment)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      
                       {/* Botão Concluir - apenas para agendamentos não concluídos e não cancelados */}
                       {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
                         <Button
@@ -455,11 +471,6 @@ export const Appointments: React.FC = () => {
                             <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                           ) : (
                             <CheckCircle className="w-4 h-4" />
-                          )}
-                          {!isMobile && (
-                            <span className="ml-2">
-                              {completingAppointment === appointment.id ? 'Concluindo...' : 'Concluir'}
-                            </span>
                           )}
                         </Button>
                       )}
@@ -478,28 +489,8 @@ export const Appointments: React.FC = () => {
                           ) : (
                             <Banknote className="w-4 h-4" />
                           )}
-                          {!isMobile && (
-                            <span className="ml-2">
-                              {launchingAppointment === appointment.id ? 'Lançando...' : 'Lançar no Caixa'}
-                            </span>
-                          )}
                         </Button>
                       )}
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(appointment)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(appointment)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                     </div>
                   </div>
                 </CardContent>

@@ -18,7 +18,7 @@ import {
   MessageCircle,
   Banknote,
   Brain,
-
+  Store,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -112,6 +112,11 @@ const navigationStructure = {
       icon: Settings,
       description: 'Um item que agrupa tudo o que é configurado raramente',
       submenu: [
+        {
+          title: 'Perfil da Clínica',
+          url: '/profile/clinic',
+          icon: Store
+        },
         {
           title: 'Financeiras',
           url: '/settings/financial',
