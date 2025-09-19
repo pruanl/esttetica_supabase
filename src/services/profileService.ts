@@ -247,4 +247,38 @@ export class ProfileService {
       };
     }
   }
+
+  // Get public profile by username (using the SQL function)
+  static async getPublicProfileByUsername(username: string): Promise<{
+    profile: Profile | null;
+    gallery: GalleryPhoto[];
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_public_clinic_profile_by_username', {
+          username_param: username
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      return data || {
+        profile: null,
+        gallery: [],
+        success: false,
+        message: 'Erro ao buscar perfil'
+      };
+    } catch (error) {
+      console.error('Error fetching public profile by username:', error);
+      return {
+        profile: null,
+        gallery: [],
+        success: false,
+        message: 'Erro ao buscar perfil por username'
+      };
+    }
+  }
 }

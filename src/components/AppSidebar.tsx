@@ -50,7 +50,7 @@ const navigationStructure = {
       description: 'Visão geral, calendário, widgets de lembretes e aniversariantes'
     },
     {
-      title: 'Agenda',
+      title: 'Agendamentos',
       url: '/appointments',
       icon: Calendar,
       description: 'A visão focada no calendário e na lista de compromissos'
