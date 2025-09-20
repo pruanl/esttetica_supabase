@@ -18,10 +18,10 @@ interface ReminderAppointment {
   patient: {
     name: string
     phone: string
-  }[]
+  }
   procedure: {
     name: string
-  }[]
+  }
 }
 
 interface MessageTemplate {
@@ -286,29 +286,29 @@ Se precisar reagendar, entre em contato conosco.`
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
                           <div>
                             <div className="text-sm text-muted-foreground">Paciente</div>
-                            <div className="font-medium">{appointment.patient?.[0]?.name}</div>
+                            <div className="font-medium">{appointment.patient?.name}</div>
                           </div>
                           <div>
                             <div className="text-sm text-muted-foreground">Procedimento</div>
-                            <div className="text-sm">{appointment.procedure?.[0]?.name}</div>
+                            <div className="text-sm">{appointment.procedure?.name}</div>
                           </div>
                           <div>
                             <div className="text-sm text-muted-foreground">Telefone</div>
-                            <div className="text-sm">{appointment.patient?.[0]?.phone || 'Não informado'}</div>
+                            <div className="text-sm">{appointment.patient?.phone || 'Não informado'}</div>
                           </div>
                         </div>
                       </div>
 
                       {/* Botões */}
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:min-w-fit">
-                        {appointment.patient?.[0]?.phone && (
+                        {appointment.patient?.phone && (
                           <Button
                             size="sm"
                             variant="outline"
                             className="w-full sm:w-auto justify-center"
                             onClick={() => openWhatsApp(
-                              appointment.patient?.[0]?.phone,
-                              appointment.patient?.[0]?.name,
+                              appointment.patient?.phone,
+                              appointment.patient?.name,
                               appointment.appointment_date
                             )}
                           >
@@ -367,15 +367,15 @@ Se precisar reagendar, entre em contato conosco.`
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
                           <div>
                             <div className="text-sm text-muted-foreground">Paciente</div>
-                            <div className="font-medium">{appointment.patient?.[0]?.name}</div>
+                            <div className="font-medium">{appointment.patient?.name}</div>
                           </div>
                           <div>
                             <div className="text-sm text-muted-foreground">Procedimento</div>
-                            <div className="text-sm">{appointment.procedure?.[0]?.name}</div>
+                            <div className="text-sm">{appointment.procedure?.name}</div>
                           </div>
                           <div>
                             <div className="text-sm text-muted-foreground">Telefone</div>
-                            <div className="text-sm">{appointment.patient?.[0]?.phone || 'Não informado'}</div>
+                            <div className="text-sm">{appointment.patient?.phone || 'Não informado'}</div>
                           </div>
                         </div>
                       </div>

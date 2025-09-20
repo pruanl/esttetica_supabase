@@ -249,6 +249,16 @@ export default function FinancialSettingsPage() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/settings')}
+                  disabled={isSaving}
+                  className="text-base"
+                >
+                  Cancelar
+                </Button>
+                
+                <Button
                   type="submit"
                   disabled={isSaving}
                   className="flex-1 text-base"
@@ -264,16 +274,6 @@ export default function FinancialSettingsPage() {
                       {isMobile ? 'Salvar' : (existingSettings ? 'Atualizar Configurações' : 'Salvar Configurações')}
                     </>
                   )}
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/settings')}
-                  disabled={isSaving}
-                  className="text-base"
-                >
-                  Cancelar
                 </Button>
               </div>
             </form>
