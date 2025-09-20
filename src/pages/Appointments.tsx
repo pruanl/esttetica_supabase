@@ -5,20 +5,25 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AppointmentDialog } from '@/components/AppointmentDialog'
 import { ConfirmationAlert } from '@/components/ConfirmationAlert'
+import AgendaView from '@/components/AgendaView'
 import { appointmentsService } from '@/services/appointmentsService'
 import { transactionsService } from '@/services/transactionsService'
 import type { AppointmentWithDetails } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
-import { Pencil, Trash2, Plus, Search, Calendar as CalendarIcon, Clock, User, FileText, Filter, X, CalendarDays, Banknote, CheckCircle } from 'lucide-react'
+import { Pencil, Trash2, Plus, Search, Calendar as CalendarIcon, Clock, User, FileText, Filter, X, CalendarDays, Banknote, CheckCircle, Grid3X3 } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import type { DateRange } from 'react-day-picker'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 export const Appointments: React.FC = () => {
   const { user } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([])
   const [filteredAppointments, setFilteredAppointments] = useState<AppointmentWithDetails[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,6 +43,21 @@ export const Appointments: React.FC = () => {
   const [launchConfirmationOpen, setLaunchConfirmationOpen] = useState(false)
   const [appointmentToLaunch, setAppointmentToLaunch] = useState<AppointmentWithDetails | null>(null)
   const isMobile = useIsMobile()
+
+  // Detectar aba ativa baseada na URL
+  const searchParams = new URLSearchParams(location.search)
+  const activeTab = searchParams.get('tab') || 'list'
+
+  const handleTabChange = (value: string) => {
+    const newSearchParams = new URLSearchParams(location.search)
+    if (value === 'list') {
+      newSearchParams.delete('tab')
+    } else {
+      newSearchParams.set('tab', value)
+    }
+    const newSearch = newSearchParams.toString()
+    navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ''}`)
+  }
 
   useEffect(() => {
     loadAppointments()
@@ -374,38 +394,52 @@ export const Appointments: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Lista de Agendamentos */}
-      {loading ? (
-        <div className="text-center py-8">
-          <p>Carregando agendamentos...</p>
-        </div>
-      ) : filteredAppointments.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500">
-              {appointments.length === 0 
-                ? 'Nenhum agendamento encontrado. Crie seu primeiro agendamento!' 
-                : 'Nenhum agendamento encontrado com os filtros aplicados.'}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {filteredAppointments.map((appointment) => {
-            const { date, time } = formatDateTime(appointment.appointment_date)
-            
-            return (
-              <Card key={appointment.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium">{appointment.patient.name}</span>
-                        </div>
-                        {appointment.patient.phone && (
+      {/* Abas de Visualização */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4" />
+            Lista
+          </TabsTrigger>
+          <TabsTrigger value="agenda" className="flex items-center gap-2">
+            <Grid3X3 className="w-4 h-4" />
+            Agenda
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="mt-6">
+          {/* Lista de Agendamentos */}
+          {loading ? (
+            <div className="text-center py-8">
+              <p>Carregando agendamentos...</p>
+            </div>
+          ) : filteredAppointments.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">
+                  {appointments.length === 0 
+                    ? 'Nenhum agendamento encontrado. Crie seu primeiro agendamento!' 
+                    : 'Nenhum agendamento encontrado com os filtros aplicados.'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {filteredAppointments.map((appointment) => {
+                const { date, time } = formatDateTime(appointment.appointment_date)
+                
+                return (
+                  <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-gray-500" />
+                              <span className="font-medium">{appointment.patient.name}</span>
+                            </div>
+                            {appointment.patient.phone && (
                           <p className="text-sm text-gray-600">{appointment.patient.phone}</p>
                         )}
                       </div>
@@ -499,6 +533,12 @@ export const Appointments: React.FC = () => {
           })}
         </div>
       )}
+        </TabsContent>
+
+        <TabsContent value="agenda" className="mt-6">
+          <AgendaView />
+        </TabsContent>
+      </Tabs>
       
       {showDialog && (
         <AppointmentDialog

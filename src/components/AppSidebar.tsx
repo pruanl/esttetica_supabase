@@ -19,6 +19,7 @@ import {
   Banknote,
   Brain,
   Store,
+  Grid3X3,
 } from 'lucide-react'
 import {
   Sidebar,

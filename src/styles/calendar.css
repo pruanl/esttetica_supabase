@@ -1,0 +1,92 @@
+/* FullCalendar Custom Styles - Integração com ShadCN/Tailwind */
+
+/* Customização dos Eventos */
+.fc-event {
+  @apply bg-blue-500 border-blue-600 text-white font-medium rounded-md shadow-sm;
+}
+
+.fc-event:hover {
+  @apply bg-blue-600 border-blue-700;
+}
+
+.fc-event-title {
+  @apply text-sm font-medium;
+}
+
+.fc-event-time {
+  @apply text-xs opacity-90;
+}
+
+/* Barra Vermelha do "Hoje" - Linha Indicadora do Tempo Atual */
+.fc-timegrid-now-indicator-line {
+  @apply border-red-500;
+  border-width: 2px !important;
+}
+
+.fc-timegrid-now-indicator-arrow {
+  @apply border-red-500;
+}
+
+/* Slot do "Hoje" no Cabeçalho - Número do Dia Atual */
+.fc-day-today .fc-daygrid-day-number,
+.fc-day-today .fc-col-header-cell-cushion {
+  @apply text-red-600 font-bold bg-red-50 rounded-md;
+}
+
+.fc-day-today {
+  @apply bg-red-50/30;
+}
+
+/* Melhorias Gerais de Estilo */
+.fc-toolbar {
+  @apply mb-4;
+}
+
+.fc-toolbar-title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.fc-button {
+  @apply bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 rounded-md px-3 py-2 text-sm font-medium transition-colors;
+}
+
+.fc-button-primary {
+  @apply bg-blue-600 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700;
+}
+
+.fc-button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Grid e Slots */
+.fc-timegrid-slot {
+  @apply border-gray-200;
+}
+
+.fc-timegrid-slot-minor {
+  @apply border-gray-100;
+}
+
+.fc-col-header {
+  @apply bg-gray-50 border-gray-200;
+}
+
+.fc-col-header-cell {
+  @apply text-gray-700 font-medium;
+}
+
+/* Seleção de Horários */
+.fc-highlight {
+  @apply bg-blue-100 opacity-50;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .fc-toolbar {
+    @apply flex-col gap-2;
+  }
+  
+  .fc-toolbar-chunk {
+    @apply flex justify-center;
+  }
+}
