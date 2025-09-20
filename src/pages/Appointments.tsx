@@ -11,9 +11,10 @@ import { ConfirmationAlert } from '@/components/ConfirmationAlert'
 import AgendaView from '@/components/AgendaView'
 import { appointmentsService } from '@/services/appointmentsService'
 import { transactionsService } from '@/services/transactionsService'
+import { supabase } from '@/lib/supabaseClient'
 import type { AppointmentWithDetails } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
-import { Pencil, Trash2, Plus, Search, Calendar as CalendarIcon, Clock, User, FileText, Filter, X, CalendarDays, Banknote, CheckCircle, Grid3X3 } from 'lucide-react'
+import { Pencil, Trash2, Plus, Search, Calendar as CalendarIcon, Clock, User, FileText, Filter, X, CalendarDays, Banknote, CheckCircle, Grid3X3, ChevronRight, History, MessageCircle, Star } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -25,6 +26,8 @@ export const Appointments: React.FC = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const [appointments, setAppointments] = useState<AppointmentWithDetails[]>([])
+  const [upcomingAppointments, setUpcomingAppointments] = useState<AppointmentWithDetails[]>([])
+  const [pastAppointments, setPastAppointments] = useState<AppointmentWithDetails[]>([])
   const [filteredAppointments, setFilteredAppointments] = useState<AppointmentWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
@@ -46,14 +49,26 @@ export const Appointments: React.FC = () => {
 
   // Detectar aba ativa baseada na URL
   const searchParams = new URLSearchParams(location.search)
-  const activeTab = searchParams.get('tab') || 'list'
+  const activeMainTab = searchParams.get('period') || 'upcoming'
+  const activeViewTab = searchParams.get('view') || 'list'
 
-  const handleTabChange = (value: string) => {
+  const handleMainTabChange = (value: string) => {
+    const newSearchParams = new URLSearchParams(location.search)
+    if (value === 'upcoming') {
+      newSearchParams.delete('period')
+    } else {
+      newSearchParams.set('period', value)
+    }
+    const newSearch = newSearchParams.toString()
+    navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ''}`)
+  }
+
+  const handleViewTabChange = (value: string) => {
     const newSearchParams = new URLSearchParams(location.search)
     if (value === 'list') {
-      newSearchParams.delete('tab')
+      newSearchParams.delete('view')
     } else {
-      newSearchParams.set('tab', value)
+      newSearchParams.set('view', value)
     }
     const newSearch = newSearchParams.toString()
     navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ''}`)
@@ -65,18 +80,73 @@ export const Appointments: React.FC = () => {
 
   useEffect(() => {
     filterAppointments()
-  }, [appointments, searchTerm, statusFilter, dateFilter, dateRange])
+  }, [upcomingAppointments, pastAppointments, searchTerm, statusFilter, dateFilter, dateRange, activeMainTab])
 
   const loadAppointments = async () => {
     if (!user) return
     
     setLoading(true)
     try {
-      const data = await appointmentsService.getAll(user.id)
-      setAppointments(data)
+      // Buscar agendamentos com informações de lembrete
+      const { data: appointmentsData, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          patient:patients(*),
+          procedure:procedures(*)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('appointment_date', { ascending: true })
+
+      if (error) {
+        throw error
+      }
+
+      // Verificar se é o primeiro agendamento para cada paciente
+      const appointmentsWithFirstCheck = await Promise.all(
+        (appointmentsData || []).map(async (appointment: any) => {
+          // Buscar agendamentos anteriores do mesmo paciente
+          const { data: previousAppointments } = await supabase
+            .from('appointments')
+            .select('id')
+            .eq('patient_id', appointment.patient_id)
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .lt('appointment_date', appointment.appointment_date)
+
+          const isFirstAppointment = !previousAppointments || previousAppointments.length === 0
+
+          return {
+            ...appointment,
+            is_first_appointment: isFirstAppointment
+          }
+        })
+      )
+
+      setAppointments(appointmentsWithFirstCheck)
+      
+      // Separar agendamentos em próximos e anteriores
+      const now = new Date()
+      now.setHours(0, 0, 0, 0) // Início do dia atual
+      
+      const upcoming = appointmentsWithFirstCheck.filter(appointment => {
+        const appointmentDate = new Date(appointment.appointment_date)
+        appointmentDate.setHours(0, 0, 0, 0)
+        return appointmentDate >= now
+      })
+      
+      const past = appointmentsWithFirstCheck.filter(appointment => {
+        const appointmentDate = new Date(appointment.appointment_date)
+        appointmentDate.setHours(0, 0, 0, 0)
+        return appointmentDate < now
+      })
+      
+      setUpcomingAppointments(upcoming)
+      setPastAppointments(past)
       
       // Verificar quais agendamentos já foram lançados no caixa
-      await checkLaunchedAppointments(data)
+      await checkLaunchedAppointments(appointmentsWithFirstCheck)
     } catch (error) {
       console.error('Erro ao carregar agendamentos:', error)
     } finally {
@@ -171,7 +241,9 @@ export const Appointments: React.FC = () => {
   }
 
   const filterAppointments = () => {
-    let filtered = appointments
+    // Escolher a lista base baseada na aba ativa
+    let baseList = activeMainTab === 'upcoming' ? upcomingAppointments : pastAppointments
+    let filtered = baseList
 
     // Filtro por termo de busca (nome do paciente ou procedimento)
     if (searchTerm) {
@@ -394,20 +466,34 @@ export const Appointments: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Abas de Visualização */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="mb-6">
+      {/* Abas Principais */}
+      <Tabs value={activeMainTab} onValueChange={handleMainTabChange} className="mb-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list" className="flex items-center gap-2">
+          <TabsTrigger value="upcoming" className="flex items-center gap-2">
             <CalendarDays className="w-4 h-4" />
-            Lista
+            Próximos
           </TabsTrigger>
-          <TabsTrigger value="agenda" className="flex items-center gap-2">
-            <Grid3X3 className="w-4 h-4" />
-            Agenda
+          <TabsTrigger value="past" className="flex items-center gap-2">
+            <History className="w-4 h-4" />
+            Anteriores
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="mt-6">
+        <TabsContent value="upcoming" className="mt-6">
+          {/* Abas de Visualização para Próximos */}
+          <Tabs value={activeViewTab} onValueChange={handleViewTabChange} className="mb-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="list" className="flex items-center gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Lista
+              </TabsTrigger>
+              <TabsTrigger value="agenda" className="flex items-center gap-2">
+                <Grid3X3 className="w-4 h-4" />
+                Agenda
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="list" className="mt-6">
           {/* Lista de Agendamentos */}
           {loading ? (
             <div className="text-center py-8">
@@ -533,10 +619,141 @@ export const Appointments: React.FC = () => {
           })}
         </div>
       )}
+            </TabsContent>
+
+            <TabsContent value="agenda" className="mt-6">
+              <AgendaView />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
-        <TabsContent value="agenda" className="mt-6">
-          <AgendaView />
+        <TabsContent value="past" className="mt-6">
+          {/* Lista de Agendamentos Anteriores - Sem abas, apenas lista */}
+          {loading ? (
+            <div className="text-center py-8">
+              <p>Carregando agendamentos...</p>
+            </div>
+          ) : filteredAppointments.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">
+                  {pastAppointments.length === 0 
+                    ? 'Nenhum agendamento anterior encontrado.' 
+                    : 'Nenhum agendamento encontrado com os filtros aplicados.'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {filteredAppointments.map((appointment) => {
+                const { date, time } = formatDateTime(appointment.appointment_date)
+                
+                return (
+                  <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-gray-500" />
+                              <span className="font-medium">{appointment.patient.name}</span>
+                            </div>
+                            {appointment.patient.phone && (
+                              <p className="text-sm text-gray-600">{appointment.patient.phone}</p>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm">{appointment.procedure.name}</span>
+                            </div>
+                            {appointment.duration_minutes && (
+                              <p className="text-sm text-gray-600">
+                                Duração: {appointment.duration_minutes} min
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <CalendarIcon className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm">{date}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm">{time}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {getStatusBadge(appointment.status)}
+                            {appointment.notes && (
+                              <p className="text-sm text-gray-600 line-clamp-2">{appointment.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(appointment)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(appointment)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                          
+                          {/* Botão Concluir - apenas para agendamentos não concluídos */}
+                          {appointment.status !== 'completed' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCompleteAppointment(appointment)}
+                              disabled={completingAppointment === appointment.id}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              {completingAppointment === appointment.id ? (
+                                <div className="w-4 h-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
+                              ) : (
+                                <CheckCircle className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
+                          
+                          {/* Botão Lançar no Caixa - apenas para agendamentos concluídos não lançados */}
+                          {appointment.status === 'completed' && !launchedAppointments.has(appointment.id) && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleLaunchToCashFlow(appointment)}
+                              disabled={launchingAppointment === appointment.id}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              {launchingAppointment === appointment.id ? (
+                                <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                              ) : (
+                                <Banknote className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
       

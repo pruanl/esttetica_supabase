@@ -45,6 +45,7 @@ export interface Appointment {
 export interface AppointmentWithDetails extends Appointment {
   patient: Patient
   procedure: Procedure
+  is_first_appointment?: boolean
 }
 
 export interface Transaction {

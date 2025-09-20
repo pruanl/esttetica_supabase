@@ -1,86 +1,75 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { SeedDataButton } from '@/components/SeedDataButton'
 import BirthdayWidget from '@/components/BirthdayWidget'
 import UpcomingAppointmentsWidget from '@/components/UpcomingAppointmentsWidget'
-import { CostPerHourWidget } from '@/components/CostPerHourWidget'
-import { Scissors, Users, Calendar } from 'lucide-react'
+import FinancialSummary from '@/components/FinancialSummary'
+import { TopProceduresWidget } from '@/components/TopProceduresWidget'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { MessageCircle, Star, HelpCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate()
+
+  const handleHelpClick = () => {
+    navigate('/help')
+  }
+
   return (
     <div className="space-y-6">
-      {/* Cards de Navegação Rápida */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <Link to="/procedures">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Scissors className="h-5 w-5" />
-                Procedimentos
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Gerencie seus procedimentos estéticos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">
-                Cadastre e organize todos os seus procedimentos
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/patients">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5" />
-                Pacientes
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Cadastro e gestão de pacientes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">
-                Gerencie informações dos seus pacientes
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link to="/appointments">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Calendar className="h-5 w-5" />
-                Agendamentos
-              </CardTitle>
-              <CardDescription className="text-sm">
-                Controle de consultas e procedimentos
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground">
-                Visualize e gerencie seus agendamentos
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      {/* Seção de Widgets e Ferramentas */}
+      {/* Resumo Financeiro */}
+      <FinancialSummary />
+      
+      {/* Legenda dos Indicadores */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-yellow-500" />
+              <span className="text-gray-600">Primeiro agendamento do paciente</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4 text-green-500" />
+              <span className="text-gray-600">Lembrete enviado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4 text-gray-400" />
+              <span className="text-gray-600">Lembrete não enviado</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Layout Simples - Próximos Agendamentos e Aniversariantes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          <CostPerHourWidget />
-          <BirthdayWidget />
-          <SeedDataButton />
-        </div>
         <div className="space-y-6">
           <UpcomingAppointmentsWidget />
         </div>
+        <div className="space-y-6">
+          <BirthdayWidget />
+          <TopProceduresWidget />
+        </div>
       </div>
+      
+      {/* Barra de Ajuda */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-muted-foreground">
+              Ajuda ou sugestão?
+            </div>
+            <Button 
+              onClick={handleHelpClick}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Clique aqui
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

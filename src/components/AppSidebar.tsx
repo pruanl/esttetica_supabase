@@ -20,6 +20,7 @@ import {
   Brain,
   Store,
   Grid3X3,
+  HelpCircle,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -128,6 +129,11 @@ const navigationStructure = {
           title: 'Gerais',
           url: '/settings',
           icon: Settings
+        },
+        {
+          title: 'Ajuda & Suporte',
+          url: '/help',
+          icon: HelpCircle
         }
       ]
     }

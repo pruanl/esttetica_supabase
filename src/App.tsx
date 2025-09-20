@@ -16,6 +16,7 @@ import PriceSimulatorPage from '@/pages/tools/PriceSimulatorPage'
 import RemindersPage from '@/pages/RemindersPage'
 import { CashFlowPage } from '@/pages/CashFlowPage'
 import ClinicProfilePage from '@/pages/profile/ClinicProfilePage'
+import { HelpPage } from '@/pages/HelpPage'
 import { Layout } from '@/components/Layout'
 
 const AppRoutes: React.FC = () => {
@@ -155,6 +156,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <CashFlowPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/help"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <HelpPage />
             </Layout>
           </ProtectedRoute>
         }

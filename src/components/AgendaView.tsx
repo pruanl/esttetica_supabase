@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
-import { Calendar, Clock } from 'lucide-react'
+import { Calendar, Clock, MessageCircle, Star } from 'lucide-react'
 
 // Tipo baseado na estrutura retornada pelo supabase
 interface AppointmentWithDetails {
@@ -24,6 +24,9 @@ interface AppointmentItem {
   appointment_date: string;
   procedure_name: string;
   duration_minutes?: number;
+  reminder_sent?: boolean;
+  patient_id?: string;
+  is_first_appointment?: boolean;
 }
 
 interface AgendaViewProps {
@@ -50,17 +53,26 @@ export default function AgendaView({ className = '' }: AgendaViewProps) {
     try {
       setLoading(true)
       setError(null)
+      
+      // Filtrar apenas agendamentos de hoje em diante
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const todayISO = today.toISOString()
+      
       const { data, error } = await supabase
         .from('appointments')
         .select(`
           id,
           appointment_date,
           duration_minutes,
+          reminder_sent,
+          patient_id,
           patient:patients(name),
           procedure:procedures(name)
         `)
         .eq('user_id', user.id)
         .eq('is_active', true)
+        .gte('appointment_date', todayISO)
         .order('appointment_date', { ascending: true })
 
       if (error) {
@@ -74,8 +86,32 @@ export default function AgendaView({ className = '' }: AgendaViewProps) {
         patient_name: appointment.patient?.name || 'Paciente não informado',
         appointment_date: appointment.appointment_date,
         procedure_name: appointment.procedure?.name || 'Procedimento não informado',
-        duration_minutes: appointment.duration_minutes
+        duration_minutes: appointment.duration_minutes,
+        reminder_sent: appointment.reminder_sent,
+        patient_id: appointment.patient_id
       }))
+
+      // Verificar primeiro agendamento para cada paciente
+      const patientIds = [...new Set(formattedAppointments.map(app => app.patient_id).filter(Boolean))]
+      
+      for (const patientId of patientIds) {
+        const { data: firstAppointmentData } = await supabase
+          .from('appointments')
+          .select('id')
+          .eq('patient_id', patientId)
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .order('appointment_date', { ascending: true })
+          .limit(1)
+
+        if (firstAppointmentData && firstAppointmentData.length > 0) {
+          const firstAppointmentId = firstAppointmentData[0].id
+          const appointmentIndex = formattedAppointments.findIndex(app => app.id === firstAppointmentId)
+          if (appointmentIndex !== -1) {
+            formattedAppointments[appointmentIndex].is_first_appointment = true
+          }
+        }
+      }
 
       setAppointments(formattedAppointments)
     } catch (err) {
@@ -99,6 +135,15 @@ export default function AgendaView({ className = '' }: AgendaViewProps) {
         minute: '2-digit'
       })
     };
+  };
+
+  const isToday = (dateString: string) => {
+    const appointmentDate = new Date(dateString);
+    const today = new Date();
+    
+    return appointmentDate.getDate() === today.getDate() &&
+           appointmentDate.getMonth() === today.getMonth() &&
+           appointmentDate.getFullYear() === today.getFullYear();
   };
 
   const handleAppointmentClick = (appointment: AppointmentItem) => {
@@ -159,22 +204,49 @@ export default function AgendaView({ className = '' }: AgendaViewProps) {
             <div className="space-y-2">
               {appointments.map((appointment) => {
                 const { date, time } = formatDateTime(appointment.appointment_date);
+                const isTodayAppointment = isToday(appointment.appointment_date);
                 return (
                   <div 
                     key={appointment.id} 
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
+                      isTodayAppointment 
+                        ? 'bg-blue-50 border-2 border-blue-200 hover:bg-blue-100' 
+                        : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
                     onClick={() => handleAppointmentClick(appointment)}
                   >
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{appointment.patient_name}</p>
-                      <p className="text-xs text-gray-600">{appointment.procedure_name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`font-medium text-sm ${isTodayAppointment ? 'text-blue-900' : ''}`}>
+                          {appointment.patient_name}
+                        </p>
+                        {appointment.is_first_appointment && (
+                          <Star className="w-4 h-4 text-yellow-500" />
+                        )}
+                        <MessageCircle 
+                          className={`w-4 h-4 ${
+                            appointment.reminder_sent 
+                              ? 'text-green-500' 
+                              : 'text-gray-400'
+                          }`} 
+                        />
+                      </div>
+                      <p className={`text-xs ${isTodayAppointment ? 'text-blue-700' : 'text-gray-600'}`}>
+                        {appointment.procedure_name}
+                      </p>
                       {appointment.duration_minutes && (
-                        <p className="text-xs text-gray-500">Duração: {appointment.duration_minutes} min</p>
+                        <p className={`text-xs ${isTodayAppointment ? 'text-blue-600' : 'text-gray-500'}`}>
+                          Duração: {appointment.duration_minutes} min
+                        </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium">{date}</p>
-                      <p className="text-xs text-gray-600">{time}</p>
+                      <p className={`text-sm font-medium ${isTodayAppointment ? 'text-blue-900' : ''}`}>
+                        {date}
+                      </p>
+                      <p className={`text-xs ${isTodayAppointment ? 'text-blue-700' : 'text-gray-600'}`}>
+                        {time}
+                      </p>
                     </div>
                   </div>
                 );
