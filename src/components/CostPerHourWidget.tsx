@@ -112,10 +112,10 @@ export function CostPerHourWidget() {
         <div className="space-y-4">
           {/* Total de Despesas Mensais */}
           <div className="flex items-center space-x-2">
-            <DollarSign className="h-4 w-4 text-red-500" />
+            <DollarSign className="h-4 w-4 text-red-500 dark:text-red-400" />
             <div>
               <p className="text-xs text-muted-foreground">Total de Despesas Mensais</p>
-              <p className="text-lg font-semibold text-red-600">
+              <p className="text-lg font-semibold text-red-600 dark:text-red-400">
                 {formatCurrency(calculation.totalMonthlyExpenses)}
               </p>
             </div>
@@ -123,10 +123,10 @@ export function CostPerHourWidget() {
 
           {/* Horas Mensais */}
           <div className="flex items-center space-x-2">
-            <Clock className="h-4 w-4 text-blue-500" />
+            <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             <div>
               <p className="text-xs text-muted-foreground">Horas de Trabalho Mensais</p>
-              <p className="text-lg font-semibold text-blue-600">
+              <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
                 {formatHours(calculation.totalMonthlyHours)}
               </p>
             </div>

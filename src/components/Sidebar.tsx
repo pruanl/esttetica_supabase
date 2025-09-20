@@ -15,7 +15,7 @@ import {
   DollarSign,
   Settings
 } from 'lucide-react'
-import logo from '@/assets/images/logo.png'
+import { useThemeLogo } from '@/hooks/use-theme-logo'
 
 interface SidebarProps {
   isOpen?: boolean
@@ -26,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
   const location = useLocation()
   const { user, signOut } = useAuth()
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false)
+  const logo = useThemeLogo()
 
   const navigationItems = [
     {

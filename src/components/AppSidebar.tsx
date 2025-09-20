@@ -40,7 +40,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { Avatar, AvatarFallback } from './ui/avatar'
-import logo from '@/assets/images/logo.png'
+import { useThemeLogo } from '@/hooks/use-theme-logo'
 
 const navigationStructure = {
   diaDia: [
@@ -143,6 +143,7 @@ export function AppSidebar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
+  const logo = useThemeLogo()
 
   const handleLogout = async () => {
     try {

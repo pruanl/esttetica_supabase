@@ -203,7 +203,7 @@ export function TopProceduresWidget() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-bold text-sm text-green-600">
+                <p className="font-bold text-sm text-green-600 dark:text-green-400">
                   {formatCurrency(item.totalProfit)}
                 </p>
                 <p className="text-xs text-muted-foreground">

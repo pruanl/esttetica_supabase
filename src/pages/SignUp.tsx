@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import logo from '@/assets/images/logo.png'
+import { useThemeLogo } from '@/hooks/use-theme-logo'
 
 export const SignUp: React.FC = () => {
   const [email, setEmail] = useState('')
@@ -16,6 +16,7 @@ export const SignUp: React.FC = () => {
   const [success, setSuccess] = useState(false)
   const { signUp } = useAuth()
   const navigate = useNavigate()
+  const logo = useThemeLogo()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -25,16 +25,16 @@ export const Dashboard: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex flex-wrap items-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-500" />
-              <span className="text-gray-600">Primeiro agendamento do paciente</span>
+              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+              <span className="text-muted-foreground">Primeiro agendamento do paciente</span>
             </div>
             <div className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4 text-green-500" />
-              <span className="text-gray-600">Lembrete enviado</span>
+              <span className="text-muted-foreground">Lembrete enviado</span>
             </div>
             <div className="flex items-center gap-2">
-              <MessageCircle className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-600">Lembrete não enviado</span>
+              <MessageCircle className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Lembrete não enviado</span>
             </div>
           </div>
         </CardContent>

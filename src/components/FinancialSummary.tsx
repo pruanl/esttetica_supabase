@@ -124,7 +124,7 @@ export const FinancialSummary: React.FC = () => {
           <Calendar className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">
+          <div className="text-2xl font-bold text-green-600 dark:text-green-400">
             {formatCurrency(metrics.today)}
           </div>
         </CardContent>
@@ -139,7 +139,7 @@ export const FinancialSummary: React.FC = () => {
           <CalendarDays className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
             {formatCurrency(metrics.week)}
           </div>
           <p className="text-xs text-muted-foreground">
@@ -157,7 +157,7 @@ export const FinancialSummary: React.FC = () => {
           <TrendingUp className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-purple-600">
+          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             {formatCurrency(metrics.month)}
           </div>
           <p className="text-xs text-muted-foreground">
