@@ -14,7 +14,7 @@ import { transactionsService } from '@/services/transactionsService'
 import { supabase } from '@/lib/supabaseClient'
 import type { AppointmentWithDetails } from '@/types/database'
 import { useAuth } from '@/contexts/AuthContext'
-import { Pencil, Trash2, Plus, Search, Calendar as CalendarIcon, Clock, User, FileText, Filter, X, CalendarDays, Banknote, CheckCircle, Grid3X3, ChevronRight, History, MessageCircle, Star } from 'lucide-react'
+import { Pencil, Trash2, Plus, Search, Calendar as CalendarIcon, Clock, User, FileText, Filter, X, CalendarDays, Banknote, CheckCircle, Grid3X3, History } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -361,20 +361,20 @@ export const Appointments: React.FC = () => {
           <div className="space-y-4">
             {/* Título da seção de filtros */}
             <div className="flex items-center gap-2 mb-4">
-              <Filter className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-800">Filtros</h2>
+              <Filter className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold text-foreground">Filtros</h2>
             </div>
             
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Busca */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1">
                     <Search className="w-4 h-4" />
                     Buscar
                   </label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                       placeholder={isMobile ? "Paciente ou procedimento" : "Buscar por paciente ou procedimento..."}
                       value={searchTerm}
@@ -386,7 +386,7 @@ export const Appointments: React.FC = () => {
                 
                 {/* Status */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1">
                     <Badge className="w-4 h-4" />
                     Status
                   </label>
@@ -405,7 +405,7 @@ export const Appointments: React.FC = () => {
 
                 {/* Range de Datas */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1">
                     <CalendarDays className="w-4 h-4" />
                     Período
                   </label>
@@ -502,8 +502,8 @@ export const Appointments: React.FC = () => {
           ) : filteredAppointments.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
-                <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">
+                <CalendarIcon className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
                   {appointments.length === 0 
                     ? 'Nenhum agendamento encontrado. Crie seu primeiro agendamento!' 
                     : 'Nenhum agendamento encontrado com os filtros aplicados.'}
@@ -522,31 +522,31 @@ export const Appointments: React.FC = () => {
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <User className="w-4 h-4 text-gray-500" />
+                              <User className="w-4 h-4 text-muted-foreground" />
                               <span className="font-medium">{appointment.patient.name}</span>
                             </div>
                             {appointment.patient.phone && (
-                          <p className="text-sm text-gray-600">{appointment.patient.phone}</p>
+                          <p className="text-sm text-muted-foreground">{appointment.patient.phone}</p>
                         )}
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-gray-500" />
+                          <FileText className="w-4 h-4 text-muted-foreground" />
                           <span className="font-medium">{appointment.procedure.name}</span>
                         </div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           R$ {appointment.total_price?.toFixed(2) || appointment.procedure.price.toFixed(2)}
                         </p>
                       </div>
 
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <CalendarIcon className="w-4 h-4 text-gray-500" />
+                          <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                           <span>{date}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Clock className="w-4 h-4 text-gray-500" />
+                          <Clock className="w-4 h-4 text-muted-foreground" />
                           <span>{time}</span>
                         </div>
                       </div>
@@ -554,7 +554,7 @@ export const Appointments: React.FC = () => {
                       <div className="space-y-2">
                         {getStatusBadge(appointment.status)}
                         {appointment.notes && (
-                          <p className="text-sm text-gray-600 line-clamp-2">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
                             {appointment.notes}
                           </p>
                         )}
@@ -636,8 +636,8 @@ export const Appointments: React.FC = () => {
           ) : filteredAppointments.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
-                <CalendarIcon className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">
+                <CalendarIcon className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
                   {pastAppointments.length === 0 
                     ? 'Nenhum agendamento anterior encontrado.' 
                     : 'Nenhum agendamento encontrado com os filtros aplicados.'}
@@ -656,21 +656,21 @@ export const Appointments: React.FC = () => {
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <User className="w-4 h-4 text-gray-500" />
+                              <User className="w-4 h-4 text-muted-foreground" />
                               <span className="font-medium">{appointment.patient.name}</span>
                             </div>
                             {appointment.patient.phone && (
-                              <p className="text-sm text-gray-600">{appointment.patient.phone}</p>
+                              <p className="text-sm text-muted-foreground">{appointment.patient.phone}</p>
                             )}
                           </div>
                           
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-gray-500" />
+                              <FileText className="w-4 h-4 text-muted-foreground" />
                               <span className="text-sm">{appointment.procedure.name}</span>
                             </div>
                             {appointment.duration_minutes && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-muted-foreground">
                                 Duração: {appointment.duration_minutes} min
                               </p>
                             )}
@@ -678,11 +678,11 @@ export const Appointments: React.FC = () => {
                           
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <CalendarIcon className="w-4 h-4 text-gray-500" />
+                              <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                               <span className="text-sm">{date}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-gray-500" />
+                              <Clock className="w-4 h-4 text-muted-foreground" />
                               <span className="text-sm">{time}</span>
                             </div>
                           </div>
@@ -690,7 +690,7 @@ export const Appointments: React.FC = () => {
                           <div className="space-y-2">
                             {getStatusBadge(appointment.status)}
                             {appointment.notes && (
-                              <p className="text-sm text-gray-600 line-clamp-2">{appointment.notes}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-2">{appointment.notes}</p>
                             )}
                           </div>
                         </div>

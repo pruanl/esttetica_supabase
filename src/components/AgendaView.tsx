@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { supabase } from '../lib/supabaseClient'
@@ -6,18 +6,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { Calendar, Clock, MessageCircle, Star } from 'lucide-react'
 
 // Tipo baseado na estrutura retornada pelo supabase
-interface AppointmentWithDetails {
-  id: string;
-  appointment_date: string;
-  duration_minutes?: number;
-  patient: {
-    name: string;
-  };
-  procedure: {
-    name: string;
-  };
-}
-
 interface AppointmentItem {
   id: string;
   patient_name: string;
@@ -197,8 +185,8 @@ export default function AgendaView({ className = '' }: AgendaViewProps) {
         <CardContent className="pb-4">
           {appointments.length === 0 ? (
             <div className="text-center py-4">
-              <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-600">Nenhum agendamento encontrado</p>
+              <Clock className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Nenhum agendamento encontrado</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -210,14 +198,14 @@ export default function AgendaView({ className = '' }: AgendaViewProps) {
                     key={appointment.id} 
                     className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
                       isTodayAppointment 
-                        ? 'bg-blue-50 border-2 border-blue-200 hover:bg-blue-100' 
-                        : 'bg-gray-50 hover:bg-gray-100'
+                        ? 'bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/30' 
+                        : 'bg-muted hover:bg-muted/80'
                     }`}
                     onClick={() => handleAppointmentClick(appointment)}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className={`font-medium text-sm ${isTodayAppointment ? 'text-blue-900' : ''}`}>
+                        <p className={`font-medium text-sm ${isTodayAppointment ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'}`}>
                           {appointment.patient_name}
                         </p>
                         {appointment.is_first_appointment && (
@@ -227,24 +215,24 @@ export default function AgendaView({ className = '' }: AgendaViewProps) {
                           className={`w-4 h-4 ${
                             appointment.reminder_sent 
                               ? 'text-green-500' 
-                              : 'text-gray-400'
+                              : 'text-muted-foreground'
                           }`} 
                         />
                       </div>
-                      <p className={`text-xs ${isTodayAppointment ? 'text-blue-700' : 'text-gray-600'}`}>
+                      <p className={`text-xs ${isTodayAppointment ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'}`}>
                         {appointment.procedure_name}
                       </p>
                       {appointment.duration_minutes && (
-                        <p className={`text-xs ${isTodayAppointment ? 'text-blue-600' : 'text-gray-500'}`}>
+                        <p className={`text-xs ${isTodayAppointment ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`}>
                           Duração: {appointment.duration_minutes} min
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className={`text-sm font-medium ${isTodayAppointment ? 'text-blue-900' : ''}`}>
+                      <p className={`text-sm font-medium ${isTodayAppointment ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'}`}>
                         {date}
                       </p>
-                      <p className={`text-xs ${isTodayAppointment ? 'text-blue-700' : 'text-gray-600'}`}>
+                      <p className={`text-xs ${isTodayAppointment ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'}`}>
                         {time}
                       </p>
                     </div>

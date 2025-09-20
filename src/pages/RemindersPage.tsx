@@ -147,7 +147,7 @@ Se precisar reagendar, entre em contato conosco.`
         return
       }
 
-      setAppointments(data || [])
+      setAppointments((data as any) || [])
     } catch (error) {
       console.error('Erro:', error)
       console.error('Erro ao carregar lembretes')
@@ -199,7 +199,7 @@ Se precisar reagendar, entre em contato conosco.`
         return
       }
 
-      setSentAppointments(data || [])
+      setSentAppointments((data as any) || [])
     } catch (error) {
       console.error('Erro:', error)
     }
@@ -260,7 +260,7 @@ Se precisar reagendar, entre em contato conosco.`
           {appointments.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
-                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Tudo em dia! 🎉</h3>
                 <p className="text-muted-foreground">
                   Não há lembretes pendentes para enviar no momento.
@@ -360,7 +360,7 @@ Se precisar reagendar, entre em contato conosco.`
                           <span className="font-medium">
                             {format(new Date(appointment.appointment_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                           </span>
-                          <CheckCircle className="h-4 w-4 text-green-500 ml-2" />
+                          <CheckCircle className="h-4 w-4 text-primary ml-2" />
                         </div>
 
                         {/* Paciente e Procedimento */}
@@ -380,7 +380,7 @@ Se precisar reagendar, entre em contato conosco.`
                         </div>
                       </div>
 
-                      <div className="flex items-center text-sm text-green-600 font-medium">
+                      <div className="flex items-center text-sm text-primary font-medium">
                         <CheckCircle className="h-4 w-4 mr-1" />
                         Enviado
                       </div>

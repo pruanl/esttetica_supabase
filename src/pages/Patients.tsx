@@ -136,14 +136,14 @@ export function Patients() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
 
       <div className="mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             type="text"
             placeholder="Buscar pacientes por nome, email ou telefone..."
@@ -160,8 +160,8 @@ export function Patients() {
         </div>
       ) : filteredPatients.length === 0 ? (
         <div className="text-center py-8">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">
+          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">
             {searchTerm ? 'Nenhum paciente encontrado para a busca.' : 'Nenhum paciente cadastrado ainda.'}
           </p>
           {!searchTerm && (
@@ -182,7 +182,7 @@ export function Patients() {
                       {patient.name}
                     </CardTitle>
                     {patient.birth_date && (
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-sm text-muted-foreground mt-1">
                         <Calendar className="h-3 w-3 inline mr-1" />
                         {calculateAge(patient.birth_date)}
                       </p>
@@ -210,7 +210,7 @@ export function Patients() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDelete(patient)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive/80"
                       title="Excluir"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -221,13 +221,13 @@ export function Patients() {
               <CardContent className="pt-0">
                 <div className="space-y-2">
                   {patient.email && (
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-muted-foreground">
                       <Mail className="h-3 w-3 mr-2" />
                       <span className="truncate">{patient.email}</span>
                     </div>
                   )}
                   {patient.phone && (
-                    <div className="flex items-center text-sm text-gray-600">
+                    <div className="flex items-center text-sm text-muted-foreground">
                       <Phone className="h-3 w-3 mr-2" />
                       <span>{patient.phone}</span>
                     </div>
@@ -248,14 +248,14 @@ export function Patients() {
                   )}
                   {patient.notes && (
                     <div className="mt-2">
-                      <p className="text-xs text-gray-500 line-clamp-2">
+                      <p className="text-xs text-muted-foreground line-clamp-2">
                         {patient.notes}
                       </p>
                     </div>
                   )}
                 </div>
                 <div className="mt-3 pt-3 border-t">
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     Cadastrado em {formatDate(patient.created_at)}
                   </p>
                 </div>

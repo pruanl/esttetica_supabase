@@ -1,6 +1,7 @@
 import React from 'react'
 import { AppSidebar } from './AppSidebar'
 import { BottomNav } from './BottomNav'
+import { ModeToggle } from './mode-toggle'
 import { SidebarProvider, SidebarTrigger } from './ui/sidebar'
 import {
   Breadcrumb,
@@ -38,7 +39,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <AppSidebar />
       <main className="flex flex-1 flex-col pb-16 md:pb-0">
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
+          <div className="flex items-center gap-2 px-4 flex-1">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
@@ -54,6 +55,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
+          </div>
+          <div className="px-4">
+            <ModeToggle />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

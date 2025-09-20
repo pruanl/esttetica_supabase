@@ -19,7 +19,6 @@ import {
   Banknote,
   Brain,
   Store,
-  Grid3X3,
   HelpCircle,
 } from 'lucide-react'
 import {

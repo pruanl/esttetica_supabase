@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { TrendingUp, Award, DollarSign } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
-import type { Procedure, FixedExpense, BusinessSettings } from '../types/database'
+import type { Procedure, FixedExpense } from '../types/database'
 import { expensesService } from '../services/expensesService'
 import { businessSettingsService } from '../services/businessSettingsService'
 
@@ -19,7 +19,6 @@ export function TopProceduresWidget() {
   const { user } = useAuth()
   const [topProcedures, setTopProcedures] = useState<ProcedureProfit[]>([])
   const [loading, setLoading] = useState(true)
-  const [costPerHour, setCostPerHour] = useState<number>(0)
 
   useEffect(() => {
     if (user) {
@@ -42,7 +41,6 @@ export function TopProceduresWidget() {
       const totalMonthlyHours = totalWeeklyHours * 4.33 // Média de semanas por mês
       
       const calculatedCostPerHour = totalMonthlyHours > 0 ? totalMonthlyExpenses / totalMonthlyHours : 0
-      setCostPerHour(calculatedCostPerHour)
       return calculatedCostPerHour
     } catch (error) {
       console.error('Erro ao calcular custo por hora:', error)

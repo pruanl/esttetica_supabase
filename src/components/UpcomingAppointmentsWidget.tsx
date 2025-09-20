@@ -1,24 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { appointmentsService } from '@/services/appointmentsService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Clock, MessageCircle, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 // Tipo local baseado na estrutura retornada pelo appointmentsService
-interface AppointmentWithDetails {
-  id: string;
-  appointment_date: string;
-  reminder_sent: boolean;
-  patient_id: string;
-  patient: {
-    name: string;
-  };
-  procedure: {
-    name: string;
-  };
-}
-
 interface UpcomingAppointment {
   id: string;
   patient_id: string;
@@ -176,8 +162,8 @@ const UpcomingAppointmentsWidget: React.FC = () => {
       <CardContent className="pb-4">
         {upcomingAppointments.length === 0 ? (
           <div className="text-center py-4">
-            <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-600">Nenhum agendamento próximo</p>
+            <Calendar className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Nenhum agendamento próximo</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -190,41 +176,44 @@ const UpcomingAppointmentsWidget: React.FC = () => {
                   key={appointment.id} 
                   className={`flex items-center justify-between p-2 rounded-lg transition-all ${
                     isTodayAppointment 
-                      ? 'bg-blue-50 border-2 border-blue-200 shadow-sm' 
-                      : 'bg-gray-50'
+                      ? 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 shadow-sm' 
+                      : 'bg-muted/50'
                   }`}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className={`font-medium text-sm ${
-                        isTodayAppointment ? 'text-blue-900' : ''
+                        isTodayAppointment ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'
                       }`}>
                         {appointment.patient_name}
                       </p>
                       {/* Indicador de primeira vez */}
                       {appointment.is_first_appointment && (
-                        <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" title="Primeira consulta" />
+                        <div title="Primeira consulta">
+                          <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
+                        </div>
                       )}
                     </div>
                     <p className={`text-xs ${
-                      isTodayAppointment ? 'text-blue-700' : 'text-gray-600'
+                      isTodayAppointment ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'
                     }`}>
                       {appointment.procedure_name}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Indicador de lembrete WhatsApp */}
-                    <MessageCircle 
-                      className={`h-4 w-4 ${
-                        appointment.reminder_sent 
-                          ? 'text-green-500' 
-                          : 'text-gray-400'
-                      }`}
-                      title={appointment.reminder_sent ? 'Lembrete enviado' : 'Lembrete não enviado'}
-                    />
+                    <div title={appointment.reminder_sent ? 'Lembrete enviado' : 'Lembrete não enviado'}>
+                      <MessageCircle 
+                        className={`h-4 w-4 ${
+                          appointment.reminder_sent 
+                            ? 'text-green-500' 
+                            : 'text-muted-foreground'
+                        }`}
+                      />
+                    </div>
                     <div className="text-right">
                       <p className={`text-sm font-medium ${
-                        isTodayAppointment ? 'text-blue-900' : ''
+                        isTodayAppointment ? 'text-blue-900 dark:text-blue-100' : 'text-foreground'
                       }`}>
                         {isTodayAppointment && (
                           <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
@@ -232,7 +221,7 @@ const UpcomingAppointmentsWidget: React.FC = () => {
                         {date}
                       </p>
                       <p className={`text-xs ${
-                        isTodayAppointment ? 'text-blue-700' : 'text-gray-600'
+                        isTodayAppointment ? 'text-blue-700 dark:text-blue-300' : 'text-muted-foreground'
                       }`}>
                         {time}
                       </p>
