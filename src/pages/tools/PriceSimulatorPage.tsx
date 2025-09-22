@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { businessSettingsService } from '@/services/businessSettingsService'
 import { expensesService } from '@/services/expensesService'
 import type { FixedExpense } from '@/types/database'
+import { useSubscription } from '@/contexts/SubscriptionContext'
+import { UpgradePrompt } from '@/components/UpgradePrompt'
 
 interface Material {
   id: string
@@ -15,6 +17,8 @@ interface Material {
 }
 
 const PriceSimulatorPage: React.FC = () => {
+  const { isActive, isPremium } = useSubscription()
+  
   // Estados para dados carregados
   const [costPerHour, setCostPerHour] = useState<number>(0)
   const [loading, setLoading] = useState(true)
@@ -101,6 +105,27 @@ const PriceSimulatorPage: React.FC = () => {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">Carregando dados...</div>
+      </div>
+    )
+  }
+
+  // Feature Gating - Verificar se tem assinatura ativa
+  if (!isActive) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Calculator className="h-8 w-8" />
+            Simulador de Preços
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Calcule o preço ideal para seus serviços em tempo real
+          </p>
+        </div>
+        <UpgradePrompt 
+          feature="Simulador de Preços"
+          description="Calcule o preço ideal para seus serviços com base nos seus custos operacionais e margem de lucro desejada."
+        />
       </div>
     )
   }

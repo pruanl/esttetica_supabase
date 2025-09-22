@@ -1,22 +1,83 @@
 import React from 'react'
 import BirthdayWidget from '@/components/BirthdayWidget'
 import UpcomingAppointmentsWidget from '@/components/UpcomingAppointmentsWidget'
-import FinancialSummary from '@/components/FinancialSummary'
+import { DebugSubscription } from '@/components/DebugSubscription'
+import { FinancialSummary } from '@/components/FinancialSummary'
 import { TopProceduresWidget } from '@/components/TopProceduresWidget'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MessageCircle, Star, HelpCircle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { MessageCircle, Star, HelpCircle, Crown, Zap, TrendingUp, Calculator } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useSubscription } from '@/contexts/SubscriptionContext'
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate()
+  const { isActive } = useSubscription()
 
   const handleHelpClick = () => {
     navigate('/help')
   }
 
+  const handleUpgradeClick = () => {
+    navigate('/subscribe')
+  }
+
   return (
     <div className="space-y-6">
+      <DebugSubscription />
+      
+      {/* Card de Upgrade para usuários sem assinatura */}
+      {!isActive && (
+        <Card className="border-2 border-dashed border-primary/50 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-primary" />
+                <CardTitle className="text-lg">Desbloqueie Todo o Potencial</CardTitle>
+              </div>
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                Premium
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Acesse todas as funcionalidades premium e transforme sua gestão:
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <span>Fluxo de Caixa Completo</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Calculator className="h-4 w-4 text-blue-500" />
+                <span>Calculadora de Precificação</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Zap className="h-4 w-4 text-yellow-500" />
+                <span>Relatórios Avançados</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <MessageCircle className="h-4 w-4 text-purple-500" />
+                <span>Lembretes Automáticos</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button onClick={handleUpgradeClick} className="flex-1">
+                <Crown className="h-4 w-4 mr-2" />
+                Fazer Upgrade Agora
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/subscribe')} className="flex-1">
+                Ver Planos
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Resumo Financeiro */}
       <FinancialSummary />
       

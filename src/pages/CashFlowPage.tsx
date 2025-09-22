@@ -10,8 +10,12 @@ import { transactionsService } from '../services/transactionsService';
 import type { Transaction } from '../types/database';
 import { Plus, Minus, Calendar, Edit, Trash2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 export function CashFlowPage() {
+  const { isActive } = useSubscription();
+  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -123,6 +127,26 @@ export function CashFlowPage() {
       }
     });
   };
+
+  // Feature Gating - Verificar se tem assinatura ativa
+  if (!isActive) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Fluxo de Caixa</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
+              Gerencie suas entradas e saídas financeiras
+            </p>
+          </div>
+        </div>
+        <UpgradePrompt 
+          feature="Fluxo de Caixa"
+          description="Controle completo das suas finanças com relatórios detalhados de entradas e saídas."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">

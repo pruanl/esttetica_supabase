@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { AppSidebar } from './AppSidebar'
 import { BottomNav } from './BottomNav'
 import { ModeToggle } from './mode-toggle'
+import { SystemBlocker } from './SystemBlocker'
 import { SidebarProvider, SidebarTrigger } from './ui/sidebar'
 import {
   Breadcrumb,
@@ -13,6 +14,8 @@ import {
 } from './ui/breadcrumb'
 import { Separator } from './ui/separator'
 import { useLocation } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabaseClient'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -32,7 +35,42 @@ const getBreadcrumbItems = (pathname: string) => {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation()
+  const { user } = useAuth()
   const currentPage = getBreadcrumbItems(location.pathname)
+  const [subscription, setSubscription] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (user) {
+      loadSubscriptionData()
+    }
+  }, [user])
+
+  const loadSubscriptionData = async () => {
+    try {
+      setLoading(true)
+      
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading subscription:', error)
+        return
+      }
+
+      setSubscription(data)
+    } catch (error) {
+      console.error('Error loading subscription data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Verifica se o sistema deve ser bloqueado
+  const isSystemBlocked = subscription?.status === 'cancellation_requested'
 
   return (
     <SidebarProvider>
@@ -65,6 +103,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </main>
       <BottomNav />
+      
+      {/* Sistema de bloqueio para cancelamentos pendentes */}
+      {!loading && isSystemBlocked && (
+        <SystemBlocker
+          isBlocked={true}
+          cancellationRequestedAt={subscription.cancellation_requested_at}
+          onCancellationWithdrawn={loadSubscriptionData}
+        />
+      )}
     </SidebarProvider>
   )
 }

@@ -962,3 +962,481 @@ COMMENT ON TABLE message_templates IS 'Stores customizable message templates for
 COMMENT ON COLUMN message_templates.template_type IS 'Type of template: reminder, birthday, etc.';
 COMMENT ON COLUMN message_templates.message_template IS 'Template text with placeholders like {nome}, {data}, etc.';
 
+-- ========================================
+-- Migration: 015_create_subscriptions_table.sql
+-- ========================================
+
+-- Migration: Create subscriptions table for Stripe integration
+-- Description: Creates the subscriptions table to manage user subscriptions with Stripe
+-- Author: System
+-- Date: 2024
+
+-- Create subscriptions table
+CREATE TABLE IF NOT EXISTS public.subscriptions (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    stripe_customer_id TEXT UNIQUE,
+    stripe_subscription_id TEXT UNIQUE,
+    status TEXT,
+    plan_name TEXT,
+    price_id TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON public.subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_customer_id ON public.subscriptions(stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_stripe_subscription_id ON public.subscriptions(stripe_subscription_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON public.subscriptions(status);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies
+-- Policy: Users can only read their own subscription data
+CREATE POLICY "Users can view own subscription" ON public.subscriptions
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- Policy: Only authenticated users can insert their own subscription (for system use)
+CREATE POLICY "System can insert subscriptions" ON public.subscriptions
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Policy: Only system can update subscriptions (typically via webhooks)
+CREATE POLICY "System can update subscriptions" ON public.subscriptions
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- Policy: Only system can delete subscriptions
+CREATE POLICY "System can delete subscriptions" ON public.subscriptions
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- Create function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger to automatically update updated_at
+CREATE TRIGGER update_subscriptions_updated_at 
+    BEFORE UPDATE ON public.subscriptions 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Grant necessary permissions
+GRANT SELECT ON public.subscriptions TO authenticated;
+GRANT INSERT ON public.subscriptions TO authenticated;
+GRANT UPDATE ON public.subscriptions TO authenticated;
+GRANT DELETE ON public.subscriptions TO authenticated;
+
+-- Add comments for documentation
+COMMENT ON TABLE public.subscriptions IS 'Stores user subscription information for Stripe integration';
+COMMENT ON COLUMN public.subscriptions.user_id IS 'Reference to the user who owns this subscription';
+COMMENT ON COLUMN public.subscriptions.stripe_customer_id IS 'Stripe customer ID for this user';
+COMMENT ON COLUMN public.subscriptions.stripe_subscription_id IS 'Stripe subscription ID';
+COMMENT ON COLUMN public.subscriptions.status IS 'Subscription status (active, canceled, past_due, etc.)';
+COMMENT ON COLUMN public.subscriptions.plan_name IS 'Name of the subscription plan';
+COMMENT ON COLUMN public.subscriptions.price_id IS 'Stripe price ID for the subscription';
+
+-- ========================================
+-- Migration: 016_update_subscriptions_table.sql
+-- ========================================
+
+-- Migration: Update subscriptions table with additional fields
+-- Description: Adds missing fields for billing page functionality
+-- Author: System
+-- Date: 2024
+
+-- Add missing columns to subscriptions table
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS current_period_start TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS plan_type TEXT CHECK (plan_type IN ('monthly', 'yearly'));
+
+-- Update existing records with default values (you can adjust these as needed)
+UPDATE public.subscriptions 
+SET 
+  current_period_start = created_at,
+  current_period_end = created_at + INTERVAL '1 month',
+  plan_type = 'monthly'
+WHERE current_period_start IS NULL;
+
+-- Add comments for documentation
+COMMENT ON COLUMN public.subscriptions.current_period_start IS 'Start date of current billing period';
+COMMENT ON COLUMN public.subscriptions.current_period_end IS 'End date of current billing period';
+COMMENT ON COLUMN public.subscriptions.plan_type IS 'Type of subscription plan: monthly or yearly';
+
+-- Create index for better performance on period queries
+CREATE INDEX IF NOT EXISTS idx_subscriptions_period_end ON public.subscriptions(current_period_end);
+
+-- ========================================
+-- Migration: 017_create_cancellation_feedback_table.sql
+-- ========================================
+
+-- Migration: Create cancellation feedback table
+-- Description: Creates table to store user feedback when canceling subscriptions
+-- Author: System
+-- Date: 2024
+
+-- Create cancellation_feedback table
+CREATE TABLE IF NOT EXISTS public.cancellation_feedback (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    subscription_id UUID REFERENCES public.subscriptions(id) ON DELETE SET NULL,
+    reason TEXT CHECK (reason IN (
+        'no_time_to_test',
+        'platform_complicated',
+        'missing_functionality',
+        'price_not_suitable',
+        'using_other_solution',
+        'other'
+    )),
+    other_reason TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_cancellation_feedback_user_id ON public.cancellation_feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_cancellation_feedback_subscription_id ON public.cancellation_feedback(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_cancellation_feedback_reason ON public.cancellation_feedback(reason);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.cancellation_feedback ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies
+-- Policy: Users can only read their own feedback
+CREATE POLICY "Users can view own cancellation feedback" ON public.cancellation_feedback
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- Policy: Users can insert their own feedback
+CREATE POLICY "Users can insert own cancellation feedback" ON public.cancellation_feedback
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Grant necessary permissions
+GRANT SELECT ON public.cancellation_feedback TO authenticated;
+GRANT INSERT ON public.cancellation_feedback TO authenticated;
+
+-- Add comments for documentation
+COMMENT ON TABLE public.cancellation_feedback IS 'Stores user feedback when canceling subscriptions';
+COMMENT ON COLUMN public.cancellation_feedback.user_id IS 'Reference to the user who provided feedback';
+COMMENT ON COLUMN public.cancellation_feedback.subscription_id IS 'Reference to the canceled subscription';
+COMMENT ON COLUMN public.cancellation_feedback.reason IS 'Predefined reason for cancellation';
+COMMENT ON COLUMN public.cancellation_feedback.other_reason IS 'Custom reason when "other" is selected';
+
+-- ========================================
+-- Migration: 018_add_cancellation_fields.sql
+-- ========================================
+
+-- Migration: Add cancellation fields to subscriptions table
+-- Description: Adds fields to handle cancellation requests and status
+-- Author: System
+-- Date: 2024
+
+-- Add cancellation-related columns
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS cancellation_requested_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS cancellation_reason TEXT,
+ADD COLUMN IF NOT EXISTS cancel_at_period_end BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS canceled_at TIMESTAMP WITH TIME ZONE;
+
+-- Add comments for documentation
+COMMENT ON COLUMN public.subscriptions.cancellation_requested_at IS 'When the user requested cancellation';
+COMMENT ON COLUMN public.subscriptions.cancellation_reason IS 'Reason provided by user for cancellation';
+COMMENT ON COLUMN public.subscriptions.cancel_at_period_end IS 'Whether subscription will cancel at period end';
+COMMENT ON COLUMN public.subscriptions.canceled_at IS 'When the subscription was actually canceled';
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_subscriptions_cancellation_requested ON public.subscriptions(cancellation_requested_at);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_cancel_at_period_end ON public.subscriptions(cancel_at_period_end);
+
+-- ========================================
+-- Migration: 019_add_cancellation_requested_status.sql
+-- ========================================
+
+-- Migration: Add cancellation_requested status to subscriptions table
+-- This allows tracking when a user has requested cancellation within 14 days
+
+-- Since the original table uses TEXT for status, we don't need to modify an enum
+-- The status field already accepts any text value
+
+-- Add a check constraint to ensure valid status values
+ALTER TABLE subscriptions 
+DROP CONSTRAINT IF EXISTS subscriptions_status_check;
+
+ALTER TABLE subscriptions 
+ADD CONSTRAINT subscriptions_status_check 
+CHECK (status IN ('active', 'canceled', 'past_due', 'incomplete', 'cancellation_requested'));
+
+-- Update the status column comment
+COMMENT ON COLUMN subscriptions.status IS 'Current subscription status - cancellation_requested indicates user requested cancellation within 14 days';
+
+-- ========================================
+-- Migration: 020_create_subscription_history.sql
+-- ========================================
+
+-- Migration: Create subscription_history table for tracking all subscription changes
+-- This table will store every subscription event (created, updated, cancelled, etc.)
+
+-- Create subscription_history table
+CREATE TABLE IF NOT EXISTS public.subscription_history (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    stripe_customer_id TEXT NOT NULL,
+    stripe_subscription_id TEXT,
+    stripe_checkout_session_id TEXT,
+    event_type TEXT NOT NULL, -- 'created', 'updated', 'cancelled', 'reactivated', etc.
+    status TEXT NOT NULL, -- 'active', 'canceled', 'past_due', 'unpaid', 'incomplete', etc.
+    plan_name TEXT,
+    price_id TEXT,
+    amount_paid DECIMAL(10,2),
+    currency TEXT DEFAULT 'BRL',
+    billing_cycle TEXT, -- 'monthly', 'yearly'
+    event_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    stripe_event_id TEXT, -- Store the Stripe event ID for deduplication
+    metadata JSONB, -- Store additional Stripe metadata
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_subscription_history_user_id ON public.subscription_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_history_stripe_customer_id ON public.subscription_history(stripe_customer_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_history_stripe_subscription_id ON public.subscription_history(stripe_subscription_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_history_event_date ON public.subscription_history(event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_subscription_history_stripe_event_id ON public.subscription_history(stripe_event_id);
+
+-- Enable RLS
+ALTER TABLE public.subscription_history ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies
+CREATE POLICY "Users can view their own subscription history" ON public.subscription_history
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Service role can manage all subscription history" ON public.subscription_history
+    FOR ALL USING (auth.role() = 'service_role');
+
+-- Grant permissions
+GRANT SELECT ON public.subscription_history TO authenticated;
+GRANT INSERT ON public.subscription_history TO authenticated;
+GRANT UPDATE ON public.subscription_history TO authenticated;
+
+-- Add comments for documentation
+COMMENT ON TABLE public.subscription_history IS 'Complete history of all subscription events and changes';
+COMMENT ON COLUMN public.subscription_history.user_id IS 'Reference to the user who owns this subscription';
+COMMENT ON COLUMN public.subscription_history.stripe_customer_id IS 'Stripe customer ID';
+COMMENT ON COLUMN public.subscription_history.stripe_subscription_id IS 'Stripe subscription ID';
+COMMENT ON COLUMN public.subscription_history.event_type IS 'Type of subscription event (created, updated, cancelled, etc.)';
+COMMENT ON COLUMN public.subscription_history.status IS 'Subscription status at the time of this event';
+COMMENT ON COLUMN public.subscription_history.stripe_event_id IS 'Stripe webhook event ID for deduplication';
+
+-- ========================================
+-- Migration: 021_update_subscriptions_table.sql
+-- ========================================
+
+-- Migration: Update subscriptions table to focus on current status only
+-- The subscription_history table will handle all historical data
+
+-- Add new columns for better current status tracking
+ALTER TABLE public.subscriptions 
+ADD COLUMN IF NOT EXISTS current_period_start TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS current_period_end TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS cancel_at_period_end BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS trial_start TIMESTAMP WITH TIME ZONE,
+ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP WITH TIME ZONE;
+
+-- Add index for better performance on status queries
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON public.subscriptions(status);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_current_period_end ON public.subscriptions(current_period_end);
+
+-- Update comments to reflect new purpose
+COMMENT ON TABLE public.subscriptions IS 'Current subscription status for each user (one record per user)';
+COMMENT ON COLUMN public.subscriptions.current_period_start IS 'Start of current billing period';
+COMMENT ON COLUMN public.subscriptions.current_period_end IS 'End of current billing period';
+COMMENT ON COLUMN public.subscriptions.cancel_at_period_end IS 'Whether subscription will cancel at period end';
+COMMENT ON COLUMN public.subscriptions.cancelled_at IS 'When the subscription was cancelled';
+
+-- Create or replace function to get user's current subscription
+CREATE OR REPLACE FUNCTION get_user_current_subscription(user_uuid UUID)
+RETURNS TABLE (
+    id UUID,
+    user_id UUID,
+    stripe_customer_id TEXT,
+    stripe_subscription_id TEXT,
+    status TEXT,
+    plan_name TEXT,
+    price_id TEXT,
+    current_period_start TIMESTAMP WITH TIME ZONE,
+    current_period_end TIMESTAMP WITH TIME ZONE,
+    cancel_at_period_end BOOLEAN,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        s.id,
+        s.user_id,
+        s.stripe_customer_id,
+        s.stripe_subscription_id,
+        s.status,
+        s.plan_name,
+        s.price_id,
+        s.current_period_start,
+        s.current_period_end,
+        s.cancel_at_period_end,
+        s.created_at,
+        s.updated_at
+    FROM public.subscriptions s
+    WHERE s.user_id = user_uuid
+    AND s.status IN ('active', 'trialing', 'past_due')
+    ORDER BY s.updated_at DESC
+    LIMIT 1;
+END;
+$$;
+
+-- Grant execute permission on the function
+GRANT EXECUTE ON FUNCTION get_user_current_subscription(UUID) TO authenticated;
+
+-- ========================================
+-- Migration: 022_add_next_billing_date.sql
+-- ========================================
+
+-- Migration: Add next_billing_date field to subscriptions table
+-- This field will store the next billing date extracted from Stripe webhooks
+
+-- Add next_billing_date column to subscriptions table
+ALTER TABLE subscriptions 
+ADD COLUMN next_billing_date TIMESTAMPTZ;
+
+-- Add comment to document the field
+COMMENT ON COLUMN subscriptions.next_billing_date IS 'Next billing date extracted from Stripe current_period_end';
+
+-- Create index for better query performance
+CREATE INDEX idx_subscriptions_next_billing_date ON subscriptions(next_billing_date);
+
+-- Drop existing function first to avoid return type conflict
+DROP FUNCTION IF EXISTS get_user_current_subscription(UUID);
+
+-- Update the get_user_current_subscription function to include next_billing_date
+CREATE OR REPLACE FUNCTION get_user_current_subscription(user_uuid UUID)
+RETURNS TABLE (
+  id BIGINT,
+  user_id UUID,
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  status TEXT,
+  plan_name TEXT,
+  price_id TEXT,
+  billing_cycle TEXT,
+  current_period_start TIMESTAMPTZ,
+  current_period_end TIMESTAMPTZ,
+  next_billing_date TIMESTAMPTZ,
+  cancel_at_period_end BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    s.id,
+    s.user_id,
+    s.stripe_customer_id,
+    s.stripe_subscription_id,
+    s.status,
+    s.plan_name,
+    s.price_id,
+    s.billing_cycle,
+    s.current_period_start,
+    s.current_period_end,
+    s.next_billing_date,
+    s.cancel_at_period_end,
+    s.created_at,
+    s.updated_at
+  FROM subscriptions s
+  WHERE s.user_id = user_uuid
+    AND s.status IN ('active', 'trialing', 'past_due', 'cancellation_requested')
+  ORDER BY s.created_at DESC
+  LIMIT 1;
+END;
+$$;
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION get_user_current_subscription(UUID) TO authenticated;
+
+-- ========================================
+-- Migration: 023_add_billing_cycle_column.sql
+-- ========================================
+
+-- Migration: Add billing_cycle column to subscriptions table
+-- This field will store the billing cycle (daily, weekly, monthly, yearly) from Stripe
+
+-- Add billing_cycle column to subscriptions table
+ALTER TABLE subscriptions 
+ADD COLUMN billing_cycle TEXT;
+
+-- Add comment to document the field
+COMMENT ON COLUMN subscriptions.billing_cycle IS 'Billing cycle from Stripe (daily, weekly, monthly, yearly)';
+
+-- Create index for better query performance
+CREATE INDEX idx_subscriptions_billing_cycle ON subscriptions(billing_cycle);
+
+-- Drop existing function first to avoid return type conflict
+DROP FUNCTION IF EXISTS get_user_current_subscription(UUID);
+
+-- Update the get_user_current_subscription function to include billing_cycle
+CREATE OR REPLACE FUNCTION get_user_current_subscription(user_uuid UUID)
+RETURNS TABLE (
+  id BIGINT,
+  user_id UUID,
+  stripe_customer_id TEXT,
+  stripe_subscription_id TEXT,
+  status TEXT,
+  plan_name TEXT,
+  price_id TEXT,
+  billing_cycle TEXT,
+  current_period_start TIMESTAMPTZ,
+  current_period_end TIMESTAMPTZ,
+  next_billing_date TIMESTAMPTZ,
+  cancel_at_period_end BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    s.id,
+    s.user_id,
+    s.stripe_customer_id,
+    s.stripe_subscription_id,
+    s.status,
+    s.plan_name,
+    s.price_id,
+    s.billing_cycle,
+    s.current_period_start,
+    s.current_period_end,
+    s.next_billing_date,
+    s.cancel_at_period_end,
+    s.created_at,
+    s.updated_at
+  FROM subscriptions s
+  WHERE s.user_id = user_uuid
+    AND s.status IN ('active', 'trialing', 'past_due', 'cancellation_requested')
+  ORDER BY s.created_at DESC
+  LIMIT 1;
+END;
+$$;
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION get_user_current_subscription(UUID) TO authenticated;
+

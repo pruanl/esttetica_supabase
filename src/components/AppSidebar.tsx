@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useSubscription } from '../contexts/SubscriptionContext'
 import { useState } from 'react'
 import {
   Home,
@@ -20,6 +21,7 @@ import {
   Brain,
   Store,
   HelpCircle,
+  CreditCard,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -120,6 +122,11 @@ const navigationStructure = {
           icon: Store
         },
         {
+          title: 'Faturamento',
+          url: '/profile/billing',
+          icon: CreditCard
+        },
+        {
           title: 'Financeiras',
           url: '/settings/financial',
           icon: DollarSign
@@ -142,6 +149,7 @@ const navigationStructure = {
 export function AppSidebar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const { isActive } = useSubscription()
   const [expandedMenus, setExpandedMenus] = useState<string[]>([])
   const logo = useThemeLogo()
 
@@ -162,6 +170,46 @@ export function AppSidebar() {
   }
 
   const isSubmenuExpanded = (menuTitle: string) => expandedMenus.includes(menuTitle)
+
+  // Função para filtrar itens baseado na assinatura
+  const getFilteredNavigationStructure = () => {
+    if (isActive) {
+      return navigationStructure // Usuários com assinatura veem tudo
+    }
+    
+    // Usuários sem assinatura veem apenas Dashboard e Configurações (Gerais e Ajuda)
+    return {
+      diaDia: [
+        {
+          title: 'Dashboard',
+          url: '/dashboard',
+          icon: Home,
+          description: 'Visão geral, calendário, widgets de lembretes e aniversariantes'
+        }
+      ],
+      configuracoes: [
+        {
+          title: 'Configurações',
+          icon: Settings,
+          description: 'Um item que agrupa tudo o que é configurado raramente',
+          submenu: [
+            {
+              title: 'Gerais',
+              url: '/settings',
+              icon: Settings
+            },
+            {
+              title: 'Ajuda & Suporte',
+              url: '/help',
+              icon: HelpCircle
+            }
+          ]
+        }
+      ]
+    }
+  }
+
+  const filteredNavigation = getFilteredNavigationStructure()
 
   const renderMenuItem = (item: any, isSubmenuItem = false) => {
        const hasSubmenu = item.submenu && item.submenu.length > 0
@@ -215,43 +263,51 @@ export function AppSidebar() {
       
       <SidebarContent>
         {/* DIA A DIA */}
-        <SidebarGroup>
-          <SidebarGroupLabel>DIA A DIA</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationStructure.diaDia.map(item => renderMenuItem(item))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {filteredNavigation.diaDia && (
+          <SidebarGroup>
+            <SidebarGroupLabel>DIA A DIA</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredNavigation.diaDia.map(item => renderMenuItem(item))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* GESTÃO */}
-        <SidebarGroup>
-          <SidebarGroupLabel>GESTÃO</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationStructure.gestao.map(item => renderMenuItem(item))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {'gestao' in filteredNavigation && filteredNavigation.gestao && (
+          <SidebarGroup>
+            <SidebarGroupLabel>GESTÃO</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredNavigation.gestao.map((item: any) => renderMenuItem(item))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* FERRAMENTAS */}
-        <SidebarGroup>
-          <SidebarGroupLabel>FERRAMENTAS</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationStructure.ferramentas.map(item => renderMenuItem(item))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {'ferramentas' in filteredNavigation && filteredNavigation.ferramentas && (
+          <SidebarGroup>
+            <SidebarGroupLabel>FERRAMENTAS</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredNavigation.ferramentas.map((item: any) => renderMenuItem(item))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* CONFIGURAÇÕES */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationStructure.configuracoes.map(item => renderMenuItem(item))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {filteredNavigation.configuracoes && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {filteredNavigation.configuracoes.map(item => renderMenuItem(item))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       
       <SidebarFooter>

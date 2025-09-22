@@ -1,8 +1,10 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { PremiumRoute } from '@/components/PremiumRoute'
 import { Login } from '@/pages/Login'
 import { SignUp } from '@/pages/SignUp'
 import { Dashboard } from '@/pages/Dashboard'
@@ -17,7 +19,9 @@ import PriceSimulatorPage from '@/pages/tools/PriceSimulatorPage'
 import RemindersPage from '@/pages/RemindersPage'
 import { CashFlowPage } from '@/pages/CashFlowPage'
 import ClinicProfilePage from '@/pages/profile/ClinicProfilePage'
+import BillingPage from '@/pages/profile/BillingPage'
 import { HelpPage } from '@/pages/HelpPage'
+import SubscriptionPage from '@/pages/SubscriptionPage'
 import { Layout } from '@/components/Layout'
 
 const AppRoutes: React.FC = () => {
@@ -55,9 +59,11 @@ const AppRoutes: React.FC = () => {
         path="/procedures"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Procedures />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <Procedures />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -65,9 +71,11 @@ const AppRoutes: React.FC = () => {
         path="/patients"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Patients />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <Patients />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -75,9 +83,11 @@ const AppRoutes: React.FC = () => {
         path="/patients/:id"
         element={
           <ProtectedRoute>
-            <Layout>
-              <PatientDetailPage />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <PatientDetailPage />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -85,9 +95,11 @@ const AppRoutes: React.FC = () => {
         path="/appointments"
         element={
           <ProtectedRoute>
-            <Layout>
-              <Appointments />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <Appointments />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -105,9 +117,11 @@ const AppRoutes: React.FC = () => {
         path="/settings/financial"
         element={
           <ProtectedRoute>
-            <Layout>
-              <FinancialSettingsPage />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <FinancialSettingsPage />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -115,9 +129,23 @@ const AppRoutes: React.FC = () => {
         path="/profile/clinic"
         element={
           <ProtectedRoute>
-            <Layout>
-              <ClinicProfilePage />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <ClinicProfilePage />
+              </Layout>
+            </PremiumRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/billing"
+        element={
+          <ProtectedRoute>
+            <PremiumRoute>
+              <Layout>
+                <BillingPage />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -125,9 +153,11 @@ const AppRoutes: React.FC = () => {
         path="/expenses"
         element={
           <ProtectedRoute>
-            <Layout>
-              <ExpensesPage />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <ExpensesPage />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -135,9 +165,11 @@ const AppRoutes: React.FC = () => {
         path="/tools/price-simulator"
         element={
           <ProtectedRoute>
-            <Layout>
-              <PriceSimulatorPage />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <PriceSimulatorPage />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -145,9 +177,11 @@ const AppRoutes: React.FC = () => {
         path="/reminders"
         element={
           <ProtectedRoute>
-            <Layout>
-              <RemindersPage />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <RemindersPage />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -155,9 +189,11 @@ const AppRoutes: React.FC = () => {
         path="/cash-flow"
         element={
           <ProtectedRoute>
-            <Layout>
-              <CashFlowPage />
-            </Layout>
+            <PremiumRoute>
+              <Layout>
+                <CashFlowPage />
+              </Layout>
+            </PremiumRoute>
           </ProtectedRoute>
         }
       />
@@ -167,6 +203,16 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <HelpPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/subscribe"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <SubscriptionPage />
             </Layout>
           </ProtectedRoute>
         }
@@ -183,9 +229,11 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <AuthProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <SubscriptionProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </SubscriptionProvider>
       </AuthProvider>
     </ThemeProvider>
   )
