@@ -5,13 +5,21 @@ import logoDark from '@/assets/images/logo_dark.png'
 
 export function useThemeLogo() {
   const { theme } = useTheme()
-  const [currentLogo, setCurrentLogo] = useState(logo)
+  
+  // Função para determinar a logo correta
+  const getCorrectLogo = () => {
+    const root = window.document.documentElement
+    const isDark = root.classList.contains('dark')
+    
+    return isDark ? logoDark : logo
+  }
+  
+  const [currentLogo, setCurrentLogo] = useState(getCorrectLogo)
 
   useEffect(() => {
     const updateLogo = () => {
       const root = window.document.documentElement
-      const isDark = root.classList.contains('dark') || 
-                    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+      const isDark = root.classList.contains('dark')
       
       setCurrentLogo(isDark ? logoDark : logo)
     }
@@ -19,12 +27,6 @@ export function useThemeLogo() {
     // Atualizar logo imediatamente
     updateLogo()
 
-    // Observar mudanças no tema do sistema
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = () => updateLogo()
-    
-    mediaQuery.addEventListener('change', handleChange)
-    
     // Observar mudanças na classe do documento
     const observer = new MutationObserver(updateLogo)
     observer.observe(document.documentElement, {
@@ -33,7 +35,6 @@ export function useThemeLogo() {
     })
 
     return () => {
-      mediaQuery.removeEventListener('change', handleChange)
       observer.disconnect()
     }
   }, [theme])

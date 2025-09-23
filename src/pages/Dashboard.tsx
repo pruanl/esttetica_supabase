@@ -1,7 +1,6 @@
 import React from 'react'
 import BirthdayWidget from '@/components/BirthdayWidget'
 import UpcomingAppointmentsWidget from '@/components/UpcomingAppointmentsWidget'
-import { DebugSubscription } from '@/components/DebugSubscription'
 import { FinancialSummary } from '@/components/FinancialSummary'
 import { TopProceduresWidget } from '@/components/TopProceduresWidget'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,8 +24,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <DebugSubscription />
-      
       {/* Card de Upgrade para usuários sem assinatura */}
       {!isActive && (
         <Card className="border-2 border-dashed border-primary/50 bg-gradient-to-r from-primary/5 to-secondary/5">
