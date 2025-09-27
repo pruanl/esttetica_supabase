@@ -234,7 +234,8 @@ async function processSubscriptionUpdate(subscription: any) {
         status: 'cancellation_requested',
         cancel_at_period_end: true,
         current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        next_billing_date: new Date(subscription.current_period_end * 1000).toISOString()
       })
       .eq('stripe_subscription_id', subscription.id)
       .select()
@@ -252,42 +253,103 @@ async function processSubscriptionUpdate(subscription: any) {
 
     console.log('Subscription marked for cancellation at period end:', subscription.id)
   } else {
-    // Check if subscription was reactivated (cancel_at_period_end changed from true to false)
-    const { data: currentSub } = await supabase
-      .from('subscriptions')
-      .select('cancel_at_period_end, status')
-      .eq('stripe_subscription_id', subscription.id)
-      .single()
-
-    if (currentSub?.cancel_at_period_end && currentSub?.status === 'cancellation_requested') {
-      console.log('Subscription reactivated:', subscription.id)
+      console.log('Subscription not set to cancel, checking for reactivation...')
       
-      // Reactivate subscription
-      const { error: reactivateError } = await supabase
+      // Check if subscription was reactivated (cancel_at_period_end changed from true to false)
+      const { data: currentSub } = await supabase
         .from('subscriptions')
-        .update({ 
-          status: 'active',
-          cancellation_requested_at: null,
-          cancel_at_period_end: false,
-          canceled_at: null, // Clear canceled_at when reactivating
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString()
-        })
+        .select('cancel_at_period_end, status')
         .eq('stripe_subscription_id', subscription.id)
+        .single()
 
-      if (reactivateError) {
-        console.error('Error reactivating subscription:', reactivateError)
-        return new Response(
-          JSON.stringify({ error: 'Database error', details: reactivateError.message }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 500 
+      console.log('Current subscription data:', currentSub)
+
+      if (currentSub?.cancel_at_period_end && currentSub?.status === 'cancellation_requested') {
+        console.log('Subscription reactivated:', subscription.id)
+        
+        // Reactivate subscription
+        const { error: reactivateError } = await supabase
+          .from('subscriptions')
+          .update({ 
+            status: 'active',
+            cancellation_requested_at: null,
+            cancel_at_period_end: false,
+            canceled_at: null, // Clear canceled_at when reactivating
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            next_billing_date: new Date(subscription.current_period_end * 1000).toISOString()
+          })
+          .eq('stripe_subscription_id', subscription.id)
+
+        if (reactivateError) {
+          console.error('Error reactivating subscription:', reactivateError)
+          return new Response(
+            JSON.stringify({ error: 'Database error', details: reactivateError.message }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 500 
+            }
+          )
+        }
+
+        console.log('Subscription reactivated successfully:', subscription.id)
+      } else {
+        // General subscription update - always update next_billing_date
+        console.log('General subscription update:', subscription.id)
+        console.log('Subscription object:', JSON.stringify(subscription, null, 2))
+        
+        // Get current_period data from subscription items if not available in main object
+        let currentPeriodStart = subscription.current_period_start
+        let currentPeriodEnd = subscription.current_period_end
+        
+        // If not in main object, try to get from subscription items
+        if (!currentPeriodStart || !currentPeriodEnd) {
+          const subscriptionItem = subscription.items?.data?.[0]
+          if (subscriptionItem) {
+            currentPeriodStart = currentPeriodStart || subscriptionItem.current_period_start
+            currentPeriodEnd = currentPeriodEnd || subscriptionItem.current_period_end
+            console.log('Using period data from subscription item:', {
+              current_period_start: currentPeriodStart,
+              current_period_end: currentPeriodEnd
+            })
           }
-        )
-      }
+        }
+        
+        // Check if current_period_end exists, if not, skip date updates
+        const updateData: any = {
+          status: subscription.status
+        }
+        
+        if (currentPeriodStart) {
+          console.log('Updating with current_period_start:', currentPeriodStart)
+          updateData.current_period_start = new Date(currentPeriodStart * 1000).toISOString()
+        }
+        
+        if (currentPeriodEnd) {
+          console.log('Updating with current_period_end:', currentPeriodEnd)
+          console.log('Converting to date:', new Date(currentPeriodEnd * 1000).toISOString())
+          updateData.current_period_end = new Date(currentPeriodEnd * 1000).toISOString()
+          updateData.next_billing_date = new Date(currentPeriodEnd * 1000).toISOString()
+        }
+        
+        const { error: generalUpdateError } = await supabase
+          .from('subscriptions')
+          .update(updateData)
+          .eq('stripe_subscription_id', subscription.id)
 
-      console.log('Subscription reactivated successfully:', subscription.id)
+        if (generalUpdateError) {
+          console.error('Error updating subscription:', generalUpdateError)
+          return new Response(
+            JSON.stringify({ error: 'Database error', details: generalUpdateError.message }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 500 
+            }
+          )
+        }
+
+        console.log('Subscription updated successfully:', subscription.id)
+      }
     }
-  }
 
   return new Response(
     JSON.stringify({ 
@@ -473,8 +535,10 @@ serve(async (req: Request) => {
     )
   } catch (error) {
     console.error('Error processing webhook:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error message:', error.message)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 

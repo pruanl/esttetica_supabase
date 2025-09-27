@@ -16,6 +16,7 @@ interface Subscription {
   status: 'active' | 'canceled' | 'past_due' | 'incomplete' | 'cancellation_requested';
   current_period_start: string;
   current_period_end: string;
+  next_billing_date?: string;
   plan_type: 'monthly' | 'yearly';
   plan_name: string;
   price_id: string;
@@ -286,7 +287,7 @@ export default function BillingPage() {
                   <label className="text-sm font-medium text-muted-foreground">Próxima Cobrança</label>
                   <p className="text-lg font-semibold flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    {formatDate(subscription.current_period_end)}
+                    {formatDate(subscription.next_billing_date || subscription.current_period_end)}
                   </p>
                 </div>
               </div>
