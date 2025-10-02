@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import type { Profile, ProfileInsert, GalleryPhoto } from '../types/database';
+import type { Profile, ProfileInsert, GalleryPhoto, PublicTreatment, WorkingHours } from '../types/database';
 import type { UsernameAvailabilityResult } from '../utils/usernameValidation';
 
 export class ProfileService {
@@ -252,6 +252,8 @@ export class ProfileService {
   static async getPublicProfileByUsername(username: string): Promise<{
     profile: Profile | null;
     gallery: GalleryPhoto[];
+    treatments: PublicTreatment[];
+    working_hours: WorkingHours[];
     success: boolean;
     message: string;
   }> {
@@ -268,6 +270,8 @@ export class ProfileService {
       return data || {
         profile: null,
         gallery: [],
+        treatments: [],
+        working_hours: [],
         success: false,
         message: 'Erro ao buscar perfil'
       };
@@ -276,6 +280,8 @@ export class ProfileService {
       return {
         profile: null,
         gallery: [],
+        treatments: [],
+        working_hours: [],
         success: false,
         message: 'Erro ao buscar perfil por username'
       };

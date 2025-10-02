@@ -59,6 +59,8 @@ apikey: sua-anon-key
   "profile": {
     "id": "uuid-do-usuario",
     "clinic_name": "Nome da Clínica",
+    "username": "clinica_exemplo",
+    "about": "Descrição sobre a clínica",
     "whatsapp_number": "+5511999999999",
     "profile_avatar_url": "https://...",
     "cover_photo_url": "https://...",
@@ -85,6 +87,40 @@ apikey: sua-anon-key
       "created_at": "2024-01-01T00:00:00Z"
     }
   ],
+  "treatments": [
+    {
+      "id": 1,
+      "name": "Limpeza de Pele",
+      "description": "Limpeza profunda com extração",
+      "display_order": 1
+    },
+    {
+      "id": 2,
+      "name": "Massagem Relaxante",
+      "description": "Massagem corporal completa",
+      "display_order": 2
+    }
+  ],
+  "working_hours": [
+    {
+      "day_of_week": 1,
+      "is_open": true,
+      "open_time": "09:00",
+      "close_time": "18:00"
+    },
+    {
+      "day_of_week": 2,
+      "is_open": true,
+      "open_time": "09:00",
+      "close_time": "18:00"
+    },
+    {
+      "day_of_week": 0,
+      "is_open": false,
+      "open_time": null,
+      "close_time": null
+    }
+  ],
   "success": true,
   "message": "Profile data retrieved successfully"
 }
@@ -97,6 +133,8 @@ apikey: sua-anon-key
 {
   "profile": null,
   "gallery": [],
+  "treatments": [],
+  "working_hours": [],
   "success": false,
   "message": "Clinic not found"
 }
@@ -107,6 +145,8 @@ apikey: sua-anon-key
 {
   "profile": null,
   "gallery": [],
+  "treatments": [],
+  "working_hours": [],
   "success": false,
   "message": "Error retrieving profile data: [detalhes do erro]"
 }

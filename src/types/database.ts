@@ -85,6 +85,7 @@ export interface Profile {
   id: string;
   clinic_name?: string;
   username?: string;
+  about?: string;
   whatsapp_number?: string;
   profile_avatar_url?: string;
   cover_photo_url?: string;
@@ -109,6 +110,28 @@ export interface GalleryPhoto {
   photo_url: string;
   user_id: string;
   created_at: string;
+}
+
+export interface PublicTreatment {
+  id: number;
+  user_id: string;
+  name: string;
+  description?: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkingHours {
+  id: number;
+  user_id: string;
+  day_of_week: number; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  is_open: boolean;
+  open_time?: string;
+  close_time?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Insert types

@@ -1,20 +1,24 @@
--- Migration: Create public profile API function
--- Description: Creates a SQL function to return public clinic profile data for external applications
+-- Migration: Update public profile API to include treatments and working hours
+-- Description: Updates the public profile API functions to include public treatments and working hours
 
--- Create function to get public clinic profile by user ID
+-- Update function to get public clinic profile by user ID
 CREATE OR REPLACE FUNCTION public.get_public_clinic_profile(clinic_user_id UUID)
 RETURNS JSON AS $$
 DECLARE
   profile_data JSON;
   gallery_data JSON;
+  treatments_data JSON;
+  working_hours_data JSON;
   result JSON;
 BEGIN
-  -- Get profile data
+  -- Get profile data (including the new about field)
   SELECT to_json(p.*) INTO profile_data
   FROM (
     SELECT 
       id,
       clinic_name,
+      username,
+      about,
       whatsapp_number,
       profile_avatar_url,
       cover_photo_url,
@@ -49,10 +53,37 @@ BEGIN
   WHERE user_id = clinic_user_id 
     AND is_active = true;
 
+  -- Get public treatments
+  SELECT json_agg(
+    json_build_object(
+      'id', id,
+      'name', name,
+      'description', description,
+      'display_order', display_order
+    ) ORDER BY display_order ASC
+  ) INTO treatments_data
+  FROM public.public_treatments 
+  WHERE user_id = clinic_user_id 
+    AND is_active = true;
+
+  -- Get working hours
+  SELECT json_agg(
+    json_build_object(
+      'day_of_week', day_of_week,
+      'is_open', is_open,
+      'open_time', open_time,
+      'close_time', close_time
+    ) ORDER BY day_of_week ASC
+  ) INTO working_hours_data
+  FROM public.working_hours 
+  WHERE user_id = clinic_user_id;
+
   -- Build final result
   SELECT json_build_object(
     'profile', profile_data,
     'gallery', COALESCE(gallery_data, '[]'::json),
+    'treatments', COALESCE(treatments_data, '[]'::json),
+    'working_hours', COALESCE(working_hours_data, '[]'::json),
     'success', true,
     'message', 'Profile data retrieved successfully'
   ) INTO result;
@@ -63,13 +94,15 @@ EXCEPTION
     RETURN json_build_object(
       'profile', null,
       'gallery', '[]'::json,
+      'treatments', '[]'::json,
+      'working_hours', '[]'::json,
       'success', false,
       'message', 'Error retrieving profile data: ' || SQLERRM
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create function to get public clinic profile by clinic name (slug-friendly)
+-- Update function to get public clinic profile by clinic name (slug-friendly)
 CREATE OR REPLACE FUNCTION public.get_public_clinic_profile_by_name(clinic_name_param TEXT)
 RETURNS JSON AS $$
 DECLARE
@@ -87,6 +120,8 @@ BEGIN
     RETURN json_build_object(
       'profile', null,
       'gallery', '[]'::json,
+      'treatments', '[]'::json,
+      'working_hours', '[]'::json,
       'success', false,
       'message', 'Clinic not found'
     );
@@ -99,7 +134,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create function to get public clinic profile by username
+-- Update function to get public clinic profile by username
 CREATE OR REPLACE FUNCTION public.get_public_clinic_profile_by_username(username_param TEXT)
 RETURNS JSON AS $$
 DECLARE
@@ -117,6 +152,8 @@ BEGIN
     RETURN json_build_object(
       'profile', null,
       'gallery', '[]'::json,
+      'treatments', '[]'::json,
+      'working_hours', '[]'::json,
       'success', false,
       'message', 'Clinic not found'
     );
@@ -129,17 +166,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Grant execute permissions to anonymous users (public access)
-GRANT EXECUTE ON FUNCTION public.get_public_clinic_profile(UUID) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_public_clinic_profile_by_name(TEXT) TO anon;
-GRANT EXECUTE ON FUNCTION public.get_public_clinic_profile_by_username(TEXT) TO anon;
-
--- Grant execute permissions to authenticated users
-GRANT EXECUTE ON FUNCTION public.get_public_clinic_profile(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_public_clinic_profile_by_name(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.get_public_clinic_profile_by_username(TEXT) TO authenticated;
-
 -- Add comments for documentation
-COMMENT ON FUNCTION public.get_public_clinic_profile(UUID) IS 'Returns public clinic profile data including gallery photos by user ID';
-COMMENT ON FUNCTION public.get_public_clinic_profile_by_name(TEXT) IS 'Returns public clinic profile data including gallery photos by clinic name';
-COMMENT ON FUNCTION public.get_public_clinic_profile_by_username(TEXT) IS 'Returns public clinic profile data including gallery photos by username';
+COMMENT ON FUNCTION public.get_public_clinic_profile(UUID) IS 'Returns public clinic profile data including gallery photos, treatments and working hours by user ID';
+COMMENT ON FUNCTION public.get_public_clinic_profile_by_name(TEXT) IS 'Returns public clinic profile data including gallery photos, treatments and working hours by clinic name';
+COMMENT ON FUNCTION public.get_public_clinic_profile_by_username(TEXT) IS 'Returns public clinic profile data including gallery photos, treatments and working hours by username';

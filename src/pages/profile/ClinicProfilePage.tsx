@@ -9,13 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-
+import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { InteractiveMap } from '@/components/ui/map';
 import { ImageCropModal } from '@/components/ui/image-crop-modal';
 
 import { ProfileService } from '@/services/profileService';
-import type { GalleryPhoto } from '@/types/database';
+import { PublicTreatmentsService } from '@/services/publicTreatmentsService';
+import { WorkingHoursService, DAYS_OF_WEEK } from '@/services/workingHoursService';
+import { ProceduresService } from '@/services/proceduresService';
+import type { GalleryPhoto, PublicTreatment, WorkingHours, Procedure } from '@/types/database';
 import { 
   validateUsername, 
   generateUsernameSuggestions,
@@ -25,6 +28,7 @@ import {
 const profileSchema = z.object({
   clinic_name: z.string().min(1, 'Nome da clínica é obrigatório'),
   username: z.string().optional(),
+  about: z.string().optional(),
   whatsapp_number: z.string().min(1, 'Número do WhatsApp é obrigatório'),
   profile_avatar_url: z.string().optional(),
   cover_photo_url: z.string().optional(),
@@ -62,11 +66,23 @@ export default function ClinicProfilePage() {
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
 
+  // Treatments states
+  const [publicTreatments, setPublicTreatments] = useState<PublicTreatment[]>([]);
+  const [procedures, setProcedures] = useState<Procedure[]>([]);
+  const [showImportTreatments, setShowImportTreatments] = useState(false);
+  const [selectedProcedures, setSelectedProcedures] = useState<string[]>([]);
+  const [loadingTreatments, setLoadingTreatments] = useState(false);
+
+  // Working hours states
+  const [workingHours, setWorkingHours] = useState<WorkingHours[]>([]);
+  const [loadingWorkingHours, setLoadingWorkingHours] = useState(false);
+
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       clinic_name: '',
       username: '',
+      about: '',
       whatsapp_number: '',
       profile_avatar_url: '',
       cover_photo_url: '',
@@ -88,6 +104,8 @@ export default function ClinicProfilePage() {
   // Load profile data
   useEffect(() => {
     loadProfileData();
+    loadTreatments();
+    loadWorkingHours();
   }, []);
 
   const loadProfileData = async () => {
@@ -102,6 +120,7 @@ export default function ClinicProfilePage() {
         form.reset({
           clinic_name: profileData.clinic_name || '',
           username: profileData.username || '',
+          about: profileData.about || '',
           whatsapp_number: profileData.whatsapp_number || '',
           profile_avatar_url: profileData.profile_avatar_url || '',
           cover_photo_url: profileData.cover_photo_url || '',
@@ -146,6 +165,32 @@ export default function ClinicProfilePage() {
       toast.error('Erro ao salvar perfil');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Load treatments
+  const loadTreatments = async () => {
+    try {
+      const [treatmentsData, proceduresData] = await Promise.all([
+        PublicTreatmentsService.getAll(),
+        ProceduresService.getAll()
+      ]);
+      setPublicTreatments(treatmentsData);
+      setProcedures(proceduresData);
+    } catch (error) {
+      console.error('Error loading treatments:', error);
+      toast.error('Erro ao carregar tratamentos');
+    }
+  };
+
+  // Load working hours
+  const loadWorkingHours = async () => {
+    try {
+      const hoursData = await WorkingHoursService.getAll();
+      setWorkingHours(hoursData);
+    } catch (error) {
+      console.error('Error loading working hours:', error);
+      toast.error('Erro ao carregar horários de funcionamento');
     }
   };
 
@@ -394,6 +439,55 @@ export default function ClinicProfilePage() {
       </div>
 
       <div className="grid gap-6">
+                {/* Profile Images */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Foto do Perfil</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Avatar Upload */}
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground mb-2">
+                Resolução recomendada: 400x400px (formato quadrado)
+              </p>
+              <div className="flex items-center space-x-4">
+                {form.watch('profile_avatar_url') && (
+                  <img
+                    src={form.watch('profile_avatar_url')}
+                    alt="Avatar"
+                    className="w-20 h-20 rounded-full object-cover"
+                  />
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageSelect(file, 'avatar');
+                    }}
+                    className="hidden"
+                    id="avatar-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                    disabled={uploadingAvatar}
+                  >
+                    {uploadingAvatar ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="mr-2 h-4 w-4" />
+                    )}
+                    {form.watch('profile_avatar_url') ? 'Alterar Foto' : 'Adicionar Foto'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -444,6 +538,28 @@ export default function ClinicProfilePage() {
                     )}
                   />
                 </div>
+
+                {/* About Field */}
+                <FormField
+                  control={form.control}
+                  name="about"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Sobre você ou Sobre a clínica</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Exemplo: Especialista em estética facial e corporal. Transformando vidas através da beleza natural e do bem-estar."
+                          className="min-h-[100px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Descreva sua especialidade, experiência ou o que torna sua clínica especial
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Username Field */}
                 <FormField
@@ -645,109 +761,12 @@ export default function ClinicProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Profile Images */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Imagens do Perfil</CardTitle>
-            <CardDescription>
-              Foto de perfil e capa que aparecerão na sua página pública
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Avatar Upload */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Foto de Perfil</label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Resolução recomendada: 400x400px (formato quadrado)
-              </p>
-              <div className="flex items-center space-x-4">
-                {form.watch('profile_avatar_url') && (
-                  <img
-                    src={form.watch('profile_avatar_url')}
-                    alt="Avatar"
-                    className="w-20 h-20 rounded-full object-cover"
-                  />
-                )}
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageSelect(file, 'avatar');
-                    }}
-                    className="hidden"
-                    id="avatar-upload"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('avatar-upload')?.click()}
-                    disabled={uploadingAvatar}
-                  >
-                    {uploadingAvatar ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="mr-2 h-4 w-4" />
-                    )}
-                    {form.watch('profile_avatar_url') ? 'Alterar Foto' : 'Adicionar Foto'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Cover Photo Upload */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Foto de Capa</label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Resolução recomendada: 1200x400px (formato retangular)
-              </p>
-              <div className="space-y-4">
-                {form.watch('cover_photo_url') && (
-                  <img
-                    src={form.watch('cover_photo_url')}
-                    alt="Capa"
-                    className="w-full h-48 rounded-lg object-cover"
-                  />
-                )}
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageSelect(file, 'cover');
-                    }}
-                    className="hidden"
-                    id="cover-upload"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('cover-upload')?.click()}
-                    disabled={uploadingCover}
-                  >
-                    {uploadingCover ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="mr-2 h-4 w-4" />
-                    )}
-                    {form.watch('cover_photo_url') ? 'Alterar Capa' : 'Adicionar Capa'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Gallery Section */}
         <Card>
           <CardHeader>
             <CardTitle>Galeria de Fotos</CardTitle>
             <CardDescription>
-              Fotos dos seus trabalhos que aparecerão na página pública
+              Fotos dos seus trabalhos que aparecerão na página pública (máximo 6 fotos)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -759,22 +778,34 @@ export default function ClinicProfilePage() {
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file, 'gallery');
+                    if (file) {
+                      if (galleryPhotos.length >= 6) {
+                        toast.error('Máximo de 6 fotos permitido na galeria');
+                        return;
+                      }
+                      handleImageUpload(file, 'gallery');
+                    }
                   }}
                   className="hidden"
                   id="gallery-upload"
                 />
                 <Button
                   type="button"
-                  onClick={() => document.getElementById('gallery-upload')?.click()}
-                  disabled={uploadingGallery}
+                  onClick={() => {
+                    if (galleryPhotos.length >= 6) {
+                      toast.error('Máximo de 6 fotos permitido na galeria');
+                      return;
+                    }
+                    document.getElementById('gallery-upload')?.click();
+                  }}
+                  disabled={uploadingGallery || galleryPhotos.length >= 6}
                 >
                   {uploadingGallery ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Camera className="mr-2 h-4 w-4" />
                   )}
-                  Adicionar Foto
+                  {galleryPhotos.length >= 6 ? 'Limite atingido (6/6)' : `Adicionar Foto (${galleryPhotos.length}/6)`}
                 </Button>
               </div>
 
@@ -803,9 +834,284 @@ export default function ClinicProfilePage() {
                 <div className="text-center py-8 text-muted-foreground">
                   <Camera className="mx-auto h-12 w-12 mb-4 opacity-50" />
                   <p>Nenhuma foto na galeria ainda</p>
-                  <p className="text-sm">Adicione fotos dos seus trabalhos</p>
+                  <p className="text-sm">Adicione fotos dos seus trabalhos (máximo 6)</p>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tratamentos Públicos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Tratamentos e Serviços
+            </CardTitle>
+            <CardDescription>
+              Adicione os tratamentos que aparecerão no seu perfil público (máximo 10 tratamentos)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Lista de tratamentos */}
+            <div className="space-y-4">
+              {publicTreatments.length > 0 ? (
+                <div className="space-y-3">
+                  {publicTreatments.map((treatment, index) => (
+                    <div key={treatment.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{treatment.name}</h4>
+                        {treatment.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{treatment.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">#{index + 1}</span>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={async () => {
+                            try {
+                              await PublicTreatmentsService.delete(treatment.id);
+                              toast.success('Tratamento removido');
+                              loadTreatments();
+                            } catch (error) {
+                              toast.error('Erro ao remover tratamento');
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Search className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>Nenhum tratamento adicionado ainda</p>
+                  <p className="text-sm">Adicione tratamentos que aparecerão no seu perfil (máximo 10)</p>
+                </div>
+              )}
+            </div>
+
+            {/* Botões de ação */}
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  if (publicTreatments.length >= 10) {
+                    toast.error('Máximo de 10 tratamentos permitido');
+                    return;
+                  }
+                  setShowImportTreatments(!showImportTreatments);
+                }}
+                variant="outline"
+                disabled={procedures.length === 0 || publicTreatments.length >= 10}
+              >
+                {showImportTreatments ? 'Cancelar Importação' : 
+                 publicTreatments.length >= 10 ? 'Limite atingido (10/10)' : 
+                 `Importar dos Procedimentos (${publicTreatments.length}/10)`}
+              </Button>
+            </div>
+
+            {/* Modal de importação */}
+            {showImportTreatments && (
+              <div className="border rounded-lg p-4 space-y-4">
+                <h4 className="font-medium">Selecione os procedimentos para importar:</h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {procedures.map((procedure) => (
+                    <label key={procedure.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedProcedures.includes(procedure.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            const newTotal = publicTreatments.length + selectedProcedures.length + 1;
+                            if (newTotal > 10) {
+                              toast.error('Máximo de 10 tratamentos permitido');
+                              return;
+                            }
+                            setSelectedProcedures([...selectedProcedures, procedure.id]);
+                          } else {
+                            setSelectedProcedures(selectedProcedures.filter(id => id !== procedure.id));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium">{procedure.name}</span>
+                        {procedure.description && (
+                          <p className="text-sm text-muted-foreground">{procedure.description}</p>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      if (selectedProcedures.length === 0) {
+                        toast.error('Selecione pelo menos um procedimento');
+                        return;
+                      }
+                      
+                      const newTotal = publicTreatments.length + selectedProcedures.length;
+                      if (newTotal > 10) {
+                        toast.error('Máximo de 10 tratamentos permitido');
+                        return;
+                      }
+                      
+                      try {
+                        setLoadingTreatments(true);
+                        await PublicTreatmentsService.importFromProcedures(selectedProcedures);
+                        toast.success(`${selectedProcedures.length} tratamento(s) importado(s) com sucesso!`);
+                        setSelectedProcedures([]);
+                        setShowImportTreatments(false);
+                        loadTreatments();
+                      } catch (error) {
+                        toast.error('Erro ao importar tratamentos');
+                      } finally {
+                        setLoadingTreatments(false);
+                      }
+                    }}
+                    disabled={selectedProcedures.length === 0 || loadingTreatments}
+                  >
+                    {loadingTreatments && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Importar Selecionados ({selectedProcedures.length})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowImportTreatments(false);
+                      setSelectedProcedures([]);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Horários de Funcionamento */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Horários de Funcionamento
+            </CardTitle>
+            <CardDescription>
+              Configure os horários de funcionamento da sua clínica
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              {DAYS_OF_WEEK.map((day) => {
+                const dayHours = workingHours.find(h => h.day_of_week === day.value);
+                return (
+                  <div key={day.value} className="flex items-center gap-4 p-3 border rounded-lg">
+                    <div className="w-32">
+                      <span className="font-medium">{day.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={dayHours?.is_open || false}
+                        onChange={async (e) => {
+                          try {
+                            setLoadingWorkingHours(true);
+                            if (dayHours) {
+                              await WorkingHoursService.updateDay(day.value, {
+                                is_open: e.target.checked,
+                                open_time: e.target.checked ? (dayHours.open_time || '09:00') : undefined,
+                                close_time: e.target.checked ? (dayHours.close_time || '18:00') : undefined
+                              });
+                            } else {
+                              await WorkingHoursService.upsert([{
+                                day_of_week: day.value,
+                                is_open: e.target.checked,
+                                open_time: e.target.checked ? '09:00' : undefined,
+                                close_time: e.target.checked ? '18:00' : undefined
+                              }]);
+                            }
+                            loadWorkingHours();
+                            toast.success(`Horário de ${day.label} atualizado com sucesso!`);
+                          } catch (error) {
+                            toast.error('Erro ao atualizar horário');
+                          } finally {
+                            setLoadingWorkingHours(false);
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Aberto</span>
+                    </div>
+                    {dayHours?.is_open && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={dayHours.open_time || '09:00'}
+                          onChange={async (e) => {
+                            try {
+                              await WorkingHoursService.updateDay(day.value, {
+                                open_time: e.target.value
+                              });
+                              loadWorkingHours();
+                              toast.success(`Horário de abertura de ${day.label} atualizado!`);
+                            } catch (error) {
+                              toast.error('Erro ao atualizar horário');
+                            }
+                          }}
+                          className="w-24"
+                        />
+                        <span className="text-sm">às</span>
+                        <Input
+                          type="time"
+                          value={dayHours.close_time || '18:00'}
+                          onChange={async (e) => {
+                            try {
+                              await WorkingHoursService.updateDay(day.value, {
+                                close_time: e.target.value
+                              });
+                              loadWorkingHours();
+                              toast.success(`Horário de fechamento de ${day.label} atualizado!`);
+                            } catch (error) {
+                              toast.error('Erro ao atualizar horário');
+                            }
+                          }}
+                          className="w-24"
+                        />
+                      </div>
+                    )}
+                    {!dayHours?.is_open && (
+                      <span className="text-sm text-muted-foreground">Fechado</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    setLoadingWorkingHours(true);
+                    await WorkingHoursService.createDefault();
+                    toast.success('Horários padrão criados');
+                    loadWorkingHours();
+                  } catch (error) {
+                    toast.error('Erro ao criar horários padrão');
+                  } finally {
+                    setLoadingWorkingHours(false);
+                  }
+                }}
+                disabled={loadingWorkingHours}
+              >
+                {loadingWorkingHours && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Definir Horários Padrão
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -440,7 +440,11 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES 
   ('avatars', 'avatars', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp']),
   ('gallery', 'gallery', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp'])
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- 2. Create profiles table with one-to-one relationship with users
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -680,12 +684,11 @@ BEGIN
       'photo_url', photo_url,
       'description', description,
       'created_at', created_at
-    )
+    ) ORDER BY created_at DESC
   ) INTO gallery_data
   FROM public.gallery_photos 
   WHERE user_id = clinic_user_id 
-    AND is_active = true
-  ORDER BY created_at DESC;
+    AND is_active = true;
 
   -- Build final result
   SELECT json_build_object(
@@ -903,6 +906,20 @@ GRANT EXECUTE ON FUNCTION public.validate_username(TEXT) TO anon;
 GRANT EXECUTE ON FUNCTION public.check_username_availability(TEXT, UUID) TO anon;
 
 -- ========================================
+-- Migration: 014_add_about_field_to_profiles.sql
+-- ========================================
+
+-- Add about field to profiles table
+-- This field will store a description about the clinic or professional
+
+-- Add the about column to the profiles table
+ALTER TABLE public.profiles
+ADD COLUMN about TEXT;
+
+-- Add comment to the column
+COMMENT ON COLUMN public.profiles.about IS 'Description about the clinic or professional';
+
+-- ========================================
 -- Migration: 014_create_message_templates.sql
 -- ========================================
 
@@ -961,6 +978,56 @@ WHERE id NOT IN (
 COMMENT ON TABLE message_templates IS 'Stores customizable message templates for WhatsApp reminders and other communications';
 COMMENT ON COLUMN message_templates.template_type IS 'Type of template: reminder, birthday, etc.';
 COMMENT ON COLUMN message_templates.message_template IS 'Template text with placeholders like {nome}, {data}, etc.';
+
+-- ========================================
+-- Migration: 015_create_public_treatments_table.sql
+-- ========================================
+
+-- Create public treatments table
+-- This table will store treatments/services that appear on the public profile
+
+CREATE TABLE IF NOT EXISTS public.public_treatments (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  display_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_public_treatments_user_id ON public.public_treatments(user_id);
+CREATE INDEX IF NOT EXISTS idx_public_treatments_active ON public.public_treatments(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_public_treatments_order ON public.public_treatments(user_id, display_order);
+
+-- Enable RLS
+ALTER TABLE public.public_treatments ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies
+CREATE POLICY "Users can view their own public treatments" ON public.public_treatments
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own public treatments" ON public.public_treatments
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own public treatments" ON public.public_treatments
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own public treatments" ON public.public_treatments
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Allow public read access for active treatments (for public profile pages)
+CREATE POLICY "Public can view active treatments" ON public.public_treatments
+  FOR SELECT USING (is_active = true);
+
+-- Add comments
+COMMENT ON TABLE public.public_treatments IS 'Treatments/services that appear on public clinic profiles';
+COMMENT ON COLUMN public.public_treatments.name IS 'Name of the treatment/service';
+COMMENT ON COLUMN public.public_treatments.description IS 'Description of the treatment/service';
+COMMENT ON COLUMN public.public_treatments.display_order IS 'Order in which treatments appear on public profile';
+COMMENT ON COLUMN public.public_treatments.is_active IS 'Whether the treatment is visible on public profile';
 
 -- ========================================
 -- Migration: 015_create_subscriptions_table.sql
@@ -1039,6 +1106,56 @@ COMMENT ON COLUMN public.subscriptions.stripe_subscription_id IS 'Stripe subscri
 COMMENT ON COLUMN public.subscriptions.status IS 'Subscription status (active, canceled, past_due, etc.)';
 COMMENT ON COLUMN public.subscriptions.plan_name IS 'Name of the subscription plan';
 COMMENT ON COLUMN public.subscriptions.price_id IS 'Stripe price ID for the subscription';
+
+-- ========================================
+-- Migration: 016_create_working_hours_table.sql
+-- ========================================
+
+-- Create working hours table
+-- This table will store the working hours for each day of the week
+
+CREATE TABLE IF NOT EXISTS public.working_hours (
+  id SERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  day_of_week INTEGER NOT NULL CHECK (day_of_week >= 0 AND day_of_week <= 6), -- 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  is_open BOOLEAN DEFAULT true,
+  open_time TIME,
+  close_time TIME,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, day_of_week)
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_working_hours_user_id ON public.working_hours(user_id);
+CREATE INDEX IF NOT EXISTS idx_working_hours_day ON public.working_hours(user_id, day_of_week);
+
+-- Enable RLS
+ALTER TABLE public.working_hours ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies
+CREATE POLICY "Users can view their own working hours" ON public.working_hours
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own working hours" ON public.working_hours
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own working hours" ON public.working_hours
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own working hours" ON public.working_hours
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Allow public read access (for public profile pages)
+CREATE POLICY "Public can view working hours" ON public.working_hours
+  FOR SELECT USING (true);
+
+-- Add comments
+COMMENT ON TABLE public.working_hours IS 'Working hours for each day of the week for clinic profiles';
+COMMENT ON COLUMN public.working_hours.day_of_week IS 'Day of week: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday';
+COMMENT ON COLUMN public.working_hours.is_open IS 'Whether the clinic is open on this day';
+COMMENT ON COLUMN public.working_hours.open_time IS 'Opening time for this day';
+COMMENT ON COLUMN public.working_hours.close_time IS 'Closing time for this day';
 
 -- ========================================
 -- Migration: 016_update_subscriptions_table.sql
@@ -1124,6 +1241,183 @@ COMMENT ON COLUMN public.cancellation_feedback.user_id IS 'Reference to the user
 COMMENT ON COLUMN public.cancellation_feedback.subscription_id IS 'Reference to the canceled subscription';
 COMMENT ON COLUMN public.cancellation_feedback.reason IS 'Predefined reason for cancellation';
 COMMENT ON COLUMN public.cancellation_feedback.other_reason IS 'Custom reason when "other" is selected';
+
+-- ========================================
+-- Migration: 017_update_public_profile_api.sql
+-- ========================================
+
+-- Migration: Update public profile API to include treatments and working hours
+-- Description: Updates the public profile API functions to include public treatments and working hours
+
+-- Update function to get public clinic profile by user ID
+CREATE OR REPLACE FUNCTION public.get_public_clinic_profile(clinic_user_id UUID)
+RETURNS JSON AS $$
+DECLARE
+  profile_data JSON;
+  gallery_data JSON;
+  treatments_data JSON;
+  working_hours_data JSON;
+  result JSON;
+BEGIN
+  -- Get profile data (including the new about field)
+  SELECT to_json(p.*) INTO profile_data
+  FROM (
+    SELECT 
+      id,
+      clinic_name,
+      username,
+      about,
+      whatsapp_number,
+      profile_avatar_url,
+      cover_photo_url,
+      address,
+      cep,
+      street,
+      number,
+      city,
+      state,
+      latitude,
+      longitude,
+      instagram_url,
+      tiktok_url,
+      youtube_url,
+      facebook_url,
+      created_at,
+      updated_at
+    FROM public.profiles 
+    WHERE id = clinic_user_id
+  ) p;
+
+  -- Get gallery photos
+  SELECT json_agg(
+    json_build_object(
+      'id', id,
+      'photo_url', photo_url,
+      'description', description,
+      'created_at', created_at
+    ) ORDER BY created_at DESC
+  ) INTO gallery_data
+  FROM public.gallery_photos 
+  WHERE user_id = clinic_user_id 
+    AND is_active = true;
+
+  -- Get public treatments
+  SELECT json_agg(
+    json_build_object(
+      'id', id,
+      'name', name,
+      'description', description,
+      'display_order', display_order
+    ) ORDER BY display_order ASC
+  ) INTO treatments_data
+  FROM public.public_treatments 
+  WHERE user_id = clinic_user_id 
+    AND is_active = true;
+
+  -- Get working hours
+  SELECT json_agg(
+    json_build_object(
+      'day_of_week', day_of_week,
+      'is_open', is_open,
+      'open_time', open_time,
+      'close_time', close_time
+    ) ORDER BY day_of_week ASC
+  ) INTO working_hours_data
+  FROM public.working_hours 
+  WHERE user_id = clinic_user_id;
+
+  -- Build final result
+  SELECT json_build_object(
+    'profile', profile_data,
+    'gallery', COALESCE(gallery_data, '[]'::json),
+    'treatments', COALESCE(treatments_data, '[]'::json),
+    'working_hours', COALESCE(working_hours_data, '[]'::json),
+    'success', true,
+    'message', 'Profile data retrieved successfully'
+  ) INTO result;
+
+  RETURN result;
+EXCEPTION
+  WHEN OTHERS THEN
+    RETURN json_build_object(
+      'profile', null,
+      'gallery', '[]'::json,
+      'treatments', '[]'::json,
+      'working_hours', '[]'::json,
+      'success', false,
+      'message', 'Error retrieving profile data: ' || SQLERRM
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Update function to get public clinic profile by clinic name (slug-friendly)
+CREATE OR REPLACE FUNCTION public.get_public_clinic_profile_by_name(clinic_name_param TEXT)
+RETURNS JSON AS $$
+DECLARE
+  clinic_user_id UUID;
+  result JSON;
+BEGIN
+  -- Find user ID by clinic name
+  SELECT id INTO clinic_user_id
+  FROM public.profiles 
+  WHERE LOWER(clinic_name) = LOWER(clinic_name_param)
+  LIMIT 1;
+
+  -- If clinic not found
+  IF clinic_user_id IS NULL THEN
+    RETURN json_build_object(
+      'profile', null,
+      'gallery', '[]'::json,
+      'treatments', '[]'::json,
+      'working_hours', '[]'::json,
+      'success', false,
+      'message', 'Clinic not found'
+    );
+  END IF;
+
+  -- Get profile data using the main function
+  SELECT public.get_public_clinic_profile(clinic_user_id) INTO result;
+  
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Update function to get public clinic profile by username
+CREATE OR REPLACE FUNCTION public.get_public_clinic_profile_by_username(username_param TEXT)
+RETURNS JSON AS $$
+DECLARE
+  clinic_user_id UUID;
+  result JSON;
+BEGIN
+  -- Find user ID by username
+  SELECT id INTO clinic_user_id
+  FROM public.profiles 
+  WHERE username = LOWER(username_param)
+  LIMIT 1;
+
+  -- If clinic not found
+  IF clinic_user_id IS NULL THEN
+    RETURN json_build_object(
+      'profile', null,
+      'gallery', '[]'::json,
+      'treatments', '[]'::json,
+      'working_hours', '[]'::json,
+      'success', false,
+      'message', 'Clinic not found'
+    );
+  END IF;
+
+  -- Get profile data using the main function
+  SELECT public.get_public_clinic_profile(clinic_user_id) INTO result;
+  
+  RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Add comments for documentation
+COMMENT ON FUNCTION public.get_public_clinic_profile(UUID) IS 'Returns public clinic profile data including gallery photos, treatments and working hours by user ID';
+COMMENT ON FUNCTION public.get_public_clinic_profile_by_name(TEXT) IS 'Returns public clinic profile data including gallery photos, treatments and working hours by clinic name';
+COMMENT ON FUNCTION public.get_public_clinic_profile_by_username(TEXT) IS 'Returns public clinic profile data including gallery photos, treatments and working hours by username';
 
 -- ========================================
 -- Migration: 018_add_cancellation_fields.sql
